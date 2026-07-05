@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wawasan Sabak AJK Admin Dashboard</title>
+<link rel="icon" type="image/jpeg" href="assets/images/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/admin.css">
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+
+<!-- ============ LOADING OVERLAY ============ -->
+<div class="dash__loading" id="dashLoading">
+  <div class="dash__loading-spinner"></div>
+  <p class="dash__loading-text" id="dashLoadingText">Mengesahkan akaun admin...</p>
+</div>
+
+<div class="dash" id="dashRoot" style="display:none;">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="dash__sidebar" id="dashSidebar">
+    <div class="dash__sidebar-head">
+      <img src="assets/images/logo.jpg" alt="Logo">
+      <span class="dash__sidebar-title"><strong>WAWASAN SABAK</strong>AJK ADMIN DASHBOARD</span>
+    </div>
+
+    <nav class="dash__nav">
+      <button class="dash__nav-item is-active" data-panel="panelMembers" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="label">Ahli &amp; Keahlian</span>
+      </button>
+      <button class="dash__nav-item" data-panel="panelPunch" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+        <span class="label">Pendaftaran Kehadiran</span>
+      </button>
+      <button class="dash__nav-item" data-panel="panelStats" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>
+        <span class="label">Statistik</span>
+      </button>
+    </nav>
+
+    <div class="dash__sidebar-foot">
+      <button class="dash__collapse-btn" id="sidebarCollapseBtn" type="button" title="Kecilkan menu">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="dash__main">
+    <header class="dash__topbar">
+      <span class="dash__topbar-title" id="topbarTitle">Ahli &amp; Keahlian</span>
+      <div class="dash__topbar-right">
+        <span class="live-dot-wrap"><span class="live-dot" id="liveDot"></span><span id="liveDotLabel">Live</span></span>
+        <button class="dash__signout" id="signOutBtn" type="button">Log Keluar</button>
+      </div>
+    </header>
+
+    <div class="dash__content">
+
+      <!-- ============ PANEL: MEMBERS ============ -->
+      <section class="dash__panel is-active" id="panelMembers">
+        <div class="member-tabs">
+          <button class="member-tab is-active" data-tier="ahli" type="button">Ahli <span class="count" id="countAhli">0</span></button>
+          <button class="member-tab" data-tier="ajk" type="button">AJK <span class="count" id="countAjk">0</span></button>
+          <button class="member-tab" data-tier="vip" type="button">VIP <span class="count" id="countVip">0</span></button>
+        </div>
+
+        <div class="search-row">
+          <input class="search-input" id="memberSearch" type="text" placeholder="Cari ID, No. Kad Pengenalan, nama, atau e-mel...">
+        </div>
+
+        <div class="member-list" id="memberList"></div>
+      </section>
+
+      <!-- ============ PANEL: PUNCH CARD / ATTENDANCE ============ -->
+      <section class="dash__panel" id="panelPunch">
+        <div class="punch-layout">
+          <div>
+            <div class="card-panel" style="margin-bottom:16px;">
+              <h3>Acara</h3>
+              <div class="event-select-row">
+                <select id="eventSelect"><option value="">— Pilih acara —</option></select>
+                <button class="btn-mini primary" id="newEventBtn" type="button">+ Acara Baru</button>
+              </div>
+
+              <div class="checkin-row">
+                <input type="text" id="checkinInput" placeholder="ID Keahlian atau e-mel...">
+                <button class="btn-mini primary" id="checkinBtn" type="button">Daftar Hadir</button>
+              </div>
+              <p class="checkin-result" id="checkinResult"></p>
+            </div>
+
+            <div class="card-panel">
+              <h3>Senarai Hadir <span id="attendeeCount" style="color:var(--ink-faint);font-weight:400;"></span></h3>
+              <table class="attendee-table">
+                <thead><tr><th>Nama</th><th>No. Keahlian</th><th>Masa Daftar</th></tr></thead>
+                <tbody id="attendeeTableBody"></tbody>
+              </table>
+              <p class="empty-state" id="attendeeEmpty" style="display:none;">Belum ada kehadiran direkodkan untuk acara ini.</p>
+            </div>
+          </div>
+
+          <div class="card-panel">
+            <h3>Butiran Acara / Laporan</h3>
+            <p style="font-size:0.78rem;color:var(--ink-faint);margin:-8px 0 14px;">Isi butiran di bawah, lalu cipta acara baru — atau tinggalkan sedia ada jika acara telah dipilih di atas.</p>
+            <div class="report-field">
+              <label>Topik</label>
+              <input type="text" id="reportTopic">
+            </div>
+            <div class="report-field">
+              <label>Tajuk</label>
+              <input type="text" id="reportTitle">
+            </div>
+            <div class="report-field">
+              <label>Lokasi</label>
+              <input type="text" id="reportLocation">
+            </div>
+            <div class="report-field">
+              <label>Tarikh &amp; Masa</label>
+              <input type="text" id="reportDateTime">
+            </div>
+            <div class="report-field">
+              <label>Dikendalikan Oleh</label>
+              <input type="text" id="reportHandledBy">
+            </div>
+            <button class="btn-mini" id="createEventBtn" type="button" style="width:100%;margin-bottom:8px;">Cipta Acara Ini</button>
+            <button class="btn-mini primary" id="downloadReportBtn" type="button" style="width:100%;">Muat Turun Laporan (PDF)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PANEL: STATISTICS ============ -->
+      <section class="dash__panel" id="panelStats">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="label">JUMLAH KESELURUHAN</div>
+            <div class="value" id="statTotal">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">AHLI</div>
+            <div class="value" id="statAhliPct">0%</div>
+            <div class="sub" id="statAhliCount">0 orang</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">AJK</div>
+            <div class="value" id="statAjkPct">0%</div>
+            <div class="sub" id="statAjkCount">0 orang</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">VIP</div>
+            <div class="value" id="statVipPct">0%</div>
+            <div class="sub" id="statVipCount">0 orang</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">PENDAFTARAN BULAN INI</div>
+            <div class="value" id="statMonthCount">0</div>
+            <div class="sub" id="statMonthChange">—</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script type="module" src="assets/js/firebase-config.js"></script>
+<script type="module" src="assets/js/admin-dashboard.js"></script>
+</body>
+</html>
