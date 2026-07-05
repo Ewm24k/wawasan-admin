@@ -1,9 +1,0 @@
-[build]
-  # Only run the sed command, as you have no npm build process
-  command = "sed -i \"s#YOUR_MAPBOX_ACCESS_TOKEN#$MAPBOX_TOKEN#g\" assets/js/wawasanverse.js"
-  publish = "."
-[functions]
-  directory = "netlify/functions"
-
-[functions."send-certificate"]
-  included_files = ["netlify/functions/certificate-assets/**"]
