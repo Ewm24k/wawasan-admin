@@ -142,10 +142,17 @@ function renderMemberList() {
         '<div class="member-row__body">' +
           '<div class="detail-grid">' +
             detailItem("No. Kad Pengenalan", r.icNumber) +
+            detailItem("Jantina", formatGender(r.gender)) +
+            detailItem("Tarikh Lahir", formatDob(r.dob)) +
+            detailItem("Tempat Lahir", r.birthplace) +
+            detailItem("Pekerjaan", r.occupation) +
+            detailItem("Nama dan Alamat Majikan", r.employer) +
             detailItem("No. Telefon", r.phone) +
+            detailItem("No. Telefon Kedua", r.phone2) +
             detailItem("E-mel", r.email) +
-            detailItem("Alamat", r.address) +
-            detailItem("Mukim / Kawasan", r.mukim) +
+            detailItem("Alamat Kediaman", r.address) +
+            detailItem("Mukim / Kawasan (Borang Awam)", r.mukim) +
+            detailItem("Cawangan Dipohon (PDM)", r.cawangan) +
             detailItem("Daftar Sebagai", r.joinAs) +
             detailItem("Mesej", r.message) +
           '</div>' +
@@ -181,6 +188,23 @@ function renderMemberList() {
 
 function detailItem(label, value) {
   return '<div class="detail-item"><span class="k">' + escapeHtml(label) + '</span><span class="v">' + escapeHtml(value || "—") + '</span></div>';
+}
+function formatGender(g) {
+  if (g === "lelaki") return "Lelaki";
+  if (g === "perempuan") return "Perempuan";
+  return "";
+}
+function formatDob(dobStr) {
+  // dobStr is stored as "YYYY-MM-DD" (from the admin add-member form's
+  // day/month/year dropdowns). Older registrations from the public
+  // form don't have this field at all — returns "" so detailItem()
+  // falls back to its own "—" display.
+  if (!dobStr || typeof dobStr !== "string") return "";
+  var parts = dobStr.split("-");
+  if (parts.length !== 3) return dobStr;
+  var year = parseInt(parts[0], 10), month = parseInt(parts[1], 10), day = parseInt(parts[2], 10);
+  if (!year || !month || !day) return dobStr;
+  return day + " " + MALAY_MONTHS_FULL[month - 1] + " " + year;
 }
 function tierButton(docId, tier, currentTierValue) {
   var isCurrent = tier === currentTierValue;
