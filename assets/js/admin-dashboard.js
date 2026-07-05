@@ -5,7 +5,7 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   doc, getDoc, collection, onSnapshot, query, orderBy,
-  addDoc, updateDoc, where, serverTimestamp, Timestamp
+  addDoc, updateDoc, where, serverTimestamp, Timestamp, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ---------- Auth guard ---------- */
@@ -490,3 +490,326 @@ function initDashboard() {
     rootEl.style.display = "flex";
   });
 }
+
+/* ============================================================
+   Cawangan (PDM) dropdown — real list, grouped by DUN
+   ============================================================ */
+var CAWANGAN_ZONES = [
+  { dun: "DUN Sungai Air Tawar (N.01)", items: [
+    "Parit Baharu Baruh", "Sungai Tengar Utara", "Sungai Air Tawar", "Sungai Bernam",
+    "Sungai Air Tawar Selatan", "Sungai Tengar Selatan", "Kampung Parit Baharu",
+    "Kampung Teluk Belanga", "Beting Kepah", "Kampung Teluk Rhu", "Simpang Empat",
+    "Kampung Sekendi", "Kampung Banting", "Kampung Batu 38 Baruh", "Kampung Baharu"
+  ]},
+  { dun: "DUN Sabak (N.02)", items: [
+    "Sabak Bernam Barat", "Kampung Air Manis", "Kampung Seri Aman", "Tebuk Pulai",
+    "Torkington", "Sabak Bernam Timur", "Bagan Nira", "Kampung Sapintas",
+    "Kampung Bagan Terap", "Bagan Terap Parit Sembilan", "Tebuk Kenchong", "Parit Enam",
+    "Parit Dua Timur", "Parit Tiga & Empat", "Parit Satu Barat", "Sungai Lias", "Batu 4 Sapintas"
+  ]}
+];
+
+var cawanganDd = document.getElementById("cawanganDd");
+var cawanganTrigger = document.getElementById("cawanganTrigger");
+var cawanganTriggerLabel = document.getElementById("cawanganTriggerLabel");
+var cawanganPanel = document.getElementById("cawanganPanel");
+var cawanganSearch = document.getElementById("cawanganSearch");
+var cawanganList = document.getElementById("cawanganList");
+var cawanganHiddenInput = document.getElementById("mfCawangan");
+
+function renderCawanganList(filterTerm) {
+  var term = (filterTerm || "").trim().toLowerCase();
+  var html = "";
+  var anyMatch = false;
+
+  CAWANGAN_ZONES.forEach(function (group) {
+    var matches = group.items.filter(function (name) { return !term || name.toLowerCase().indexOf(term) > -1; });
+    if (matches.length === 0) return;
+    anyMatch = true;
+    html += '<div class="cawangan-dd__group-label">' + escapeHtml(group.dun) + '</div>';
+    matches.forEach(function (name) {
+      var globalIndex = group.items.indexOf(name) + 1;
+      var isSelected = cawanganHiddenInput.value === name;
+      html += '<div class="cawangan-dd__option' + (isSelected ? ' is-selected' : '') + '" data-name="' + escapeHtml(name) + '">' +
+                '<span class="idx">' + String(globalIndex).padStart(2, "0") + '</span>' + escapeHtml(name) +
+              '</div>';
+    });
+  });
+
+  cawanganList.innerHTML = anyMatch ? html : '<div class="cawangan-dd__empty">Tiada PDM sepadan.</div>';
+
+  cawanganList.querySelectorAll(".cawangan-dd__option").forEach(function (opt) {
+    opt.addEventListener("click", function () {
+      selectCawangan(opt.getAttribute("data-name"));
+    });
+  });
+}
+
+function selectCawangan(name) {
+  cawanganHiddenInput.value = name;
+  cawanganTriggerLabel.textContent = name;
+  cawanganTrigger.classList.add("has-value");
+  closeCawanganPanel();
+  validateField(FIELDS.find(function (f) { return f.id === "mfCawangan"; }));
+  updateSubmitState();
+}
+
+function openCawanganPanel() {
+  cawanganDd.classList.add("is-open");
+  cawanganPanel.hidden = false;
+  cawanganTrigger.setAttribute("aria-expanded", "true");
+  cawanganSearch.value = "";
+  renderCawanganList("");
+  cawanganSearch.focus();
+}
+function closeCawanganPanel() {
+  cawanganDd.classList.remove("is-open");
+  cawanganPanel.hidden = true;
+  cawanganTrigger.setAttribute("aria-expanded", "false");
+}
+
+cawanganTrigger.addEventListener("click", function () {
+  if (cawanganPanel.hidden) openCawanganPanel(); else closeCawanganPanel();
+});
+cawanganSearch.addEventListener("input", function () { renderCawanganList(cawanganSearch.value); });
+document.addEventListener("click", function (e) {
+  if (!cawanganDd.contains(e.target)) closeCawanganPanel();
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") closeCawanganPanel();
+});
+
+/* ============================================================
+   Add Member modal
+   ============================================================ */
+var addMemberOverlay = document.getElementById("addMemberOverlay");
+var addMemberForm = document.getElementById("addMemberForm");
+var submitAddMemberBtn = document.getElementById("submitAddMemberBtn");
+var duplicateNoticeEl = document.getElementById("mfDuplicateNotice");
+var submitErrorEl = document.getElementById("mfSubmitError");
+
+/* ---------- Day / Month / Year dropdowns ---------- */
+var dobDay = document.getElementById("mfDobDay");
+var dobMonth = document.getElementById("mfDobMonth");
+var dobYear = document.getElementById("mfDobYear");
+var MALAY_MONTHS_FULL = ["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
+
+(function populateDobDropdowns() {
+  for (var d = 1; d <= 31; d++) {
+    var opt = document.createElement("option");
+    opt.value = String(d);
+    opt.textContent = String(d);
+    dobDay.appendChild(opt);
+  }
+  MALAY_MONTHS_FULL.forEach(function (m, i) {
+    var opt = document.createElement("option");
+    opt.value = String(i + 1);
+    opt.textContent = m;
+    dobMonth.appendChild(opt);
+  });
+  var thisYear = new Date().getFullYear();
+  for (var y = thisYear; y >= thisYear - 100; y--) {
+    var opt2 = document.createElement("option");
+    opt2.value = String(y);
+    opt2.textContent = String(y);
+    dobYear.appendChild(opt2);
+  }
+})();
+
+function daysInMonth(month, year) {
+  return new Date(year, month, 0).getDate();
+}
+
+/* ---------- Field definitions: id, required?, validator(value) -> error string|null ---------- */
+function isValidIc(v) { return /^\d{12}$/.test(v.replace(/[\s-]/g, "")); }
+function isValidPhone(v) { var d = v.replace(/[\s-]/g, "").replace(/^\+?60/, "0"); return /^0\d{8,10}$/.test(d); }
+function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+var FIELDS = [
+  { id: "mfFullName", required: true, validate: function (v) { return v.length >= 2 ? null : "Nama terlalu pendek."; } },
+  { id: "mfGender", required: true, validate: function () { return null; } },
+  { id: "mfIcNumber", required: true, validate: function (v) { return isValidIc(v) ? null : "Format tidak sah (12 digit, cth: 900101-10-1234)."; } },
+  { id: "mfBirthplace", required: true, validate: function () { return null; } },
+  { id: "mfOccupation", required: true, validate: function () { return null; } },
+  { id: "mfEmployer", required: true, validate: function () { return null; } },
+  { id: "mfAddress", required: true, validate: function () { return null; } },
+  { id: "mfPhone", required: true, validate: function (v) { return isValidPhone(v) ? null : "Format tidak sah (cth: 012-345 6789)."; } },
+  { id: "mfPhone2", required: false, validate: function (v) { return (!v || isValidPhone(v)) ? null : "Format tidak sah (cth: 012-345 6789)."; } },
+  { id: "mfEmail", required: true, validate: function (v) { return isValidEmail(v) ? null : "Format e-mel tidak sah."; } },
+  { id: "mfCawangan", required: true, validate: function () { return null; } },
+];
+
+function validateField(f) {
+  var el = document.getElementById(f.id);
+  var errEl = document.getElementById("err-" + f.id);
+  var value = el.value.trim();
+  var error = null;
+
+  if (f.required && !value) {
+    error = "Ruangan ini wajib diisi.";
+  } else if (value || f.required) {
+    error = f.validate(value);
+  } else if (!f.required && value) {
+    error = f.validate(value);
+  }
+
+  el.closest(".mf-field").classList.toggle("is-invalid", !!error);
+  errEl.textContent = error || "";
+  return !error;
+}
+
+function validateDob() {
+  var errEl = document.getElementById("err-mfDob");
+  var d = dobDay.value, m = dobMonth.value, y = dobYear.value;
+  var wrap = dobDay.closest(".mf-field");
+  if (!d || !m || !y) {
+    wrap.classList.add("is-invalid");
+    errEl.textContent = "Sila lengkapkan tarikh lahir.";
+    return false;
+  }
+  if (parseInt(d, 10) > daysInMonth(parseInt(m, 10), parseInt(y, 10))) {
+    wrap.classList.add("is-invalid");
+    errEl.textContent = "Tarikh tidak sah untuk bulan tersebut.";
+    return false;
+  }
+  wrap.classList.remove("is-invalid");
+  errEl.textContent = "";
+  return true;
+}
+
+function validateAll() {
+  var results = FIELDS.map(validateField);
+  results.push(validateDob());
+  return results.every(Boolean);
+}
+
+function updateSubmitState() {
+  submitAddMemberBtn.disabled = !validateAll();
+}
+
+FIELDS.forEach(function (f) {
+  document.getElementById(f.id).addEventListener("input", updateSubmitState);
+  document.getElementById(f.id).addEventListener("blur", updateSubmitState);
+});
+[dobDay, dobMonth, dobYear].forEach(function (el) {
+  el.addEventListener("change", updateSubmitState);
+});
+
+/* ---------- Open / close modal ---------- */
+function openAddMemberModal() {
+  addMemberForm.reset();
+  FIELDS.forEach(function (f) {
+    document.getElementById(f.id).closest(".mf-field").classList.remove("is-invalid");
+    document.getElementById("err-" + f.id).textContent = "";
+  });
+  document.getElementById("err-mfDob").textContent = "";
+  dobDay.closest(".mf-field").classList.remove("is-invalid");
+  cawanganTriggerLabel.textContent = "Pilih cawangan (PDM)";
+  cawanganTrigger.classList.remove("has-value");
+  closeCawanganPanel();
+  duplicateNoticeEl.hidden = true;
+  submitErrorEl.hidden = true;
+  submitAddMemberBtn.disabled = true;
+  addMemberOverlay.classList.add("is-open");
+  addMemberOverlay.setAttribute("aria-hidden", "false");
+}
+function closeAddMemberModal() {
+  addMemberOverlay.classList.remove("is-open");
+  addMemberOverlay.setAttribute("aria-hidden", "true");
+}
+
+document.getElementById("openAddMemberBtn").addEventListener("click", openAddMemberModal);
+document.getElementById("closeAddMemberBtn").addEventListener("click", closeAddMemberModal);
+document.getElementById("cancelAddMemberBtn").addEventListener("click", closeAddMemberModal);
+addMemberOverlay.addEventListener("click", function (e) {
+  if (e.target === addMemberOverlay) closeAddMemberModal();
+});
+
+/* ---------- Member ID generation (mirrors form-submit.js's logic) ---------- */
+var ID_DIGIT_LENGTH = 6;
+var LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+var MAX_ID_ATTEMPTS = 25;
+function randomDigits(len) { var s = ""; for (var i = 0; i < len; i++) s += Math.floor(Math.random() * 10); return s; }
+function randomLetter() { return LETTERS.charAt(Math.floor(Math.random() * LETTERS.length)); }
+function generateCandidateId() { return "N" + randomDigits(ID_DIGIT_LENGTH) + randomLetter(); }
+
+async function generateUniqueMemberId() {
+  for (var attempt = 0; attempt < MAX_ID_ATTEMPTS; attempt++) {
+    var candidate = generateCandidateId();
+    var ref = doc(db, "member_ids", candidate);
+    try {
+      var reserved = await runTransaction(db, async function (tx) {
+        var snap = await tx.get(ref);
+        if (snap.exists()) return false;
+        tx.set(ref, { createdAt: serverTimestamp() });
+        return true;
+      });
+      if (reserved) return candidate;
+    } catch (err) {
+      if (attempt === MAX_ID_ATTEMPTS - 1) throw err;
+    }
+  }
+  throw new Error("Gagal menjana ID unik selepas beberapa percubaan.");
+}
+
+/* ---------- Submit: create new, or merge onto an existing match by IC ---------- */
+addMemberForm.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  if (!validateAll()) return;
+
+  submitErrorEl.hidden = true;
+  duplicateNoticeEl.hidden = true;
+  submitAddMemberBtn.disabled = true;
+  submitAddMemberBtn.textContent = "Memproses...";
+
+  var icNumber = document.getElementById("mfIcNumber").value.trim();
+  var newFields = {
+    fullName: document.getElementById("mfFullName").value.trim(),
+    gender: document.getElementById("mfGender").value,
+    icNumber: icNumber,
+    dob: dobYear.value + "-" + String(dobMonth.value).padStart(2, "0") + "-" + String(dobDay.value).padStart(2, "0"),
+    birthplace: document.getElementById("mfBirthplace").value.trim(),
+    occupation: document.getElementById("mfOccupation").value.trim(),
+    employer: document.getElementById("mfEmployer").value.trim(),
+    address: document.getElementById("mfAddress").value.trim(),
+    phone: document.getElementById("mfPhone").value.trim(),
+    phone2: document.getElementById("mfPhone2").value.trim(),
+    email: document.getElementById("mfEmail").value.trim(),
+    cawangan: document.getElementById("mfCawangan").value,
+  };
+
+  // Duplicate check: an existing registration with the same IC number
+  // means this person already came through the public form — merge
+  // these additional fields onto that record instead of creating a
+  // second, duplicate one. Their existing memberId/tier are untouched.
+  var existing = allRegistrations.find(function (r) {
+    return r.icNumber && r.icNumber.replace(/[\s-]/g, "") === icNumber.replace(/[\s-]/g, "");
+  });
+
+  try {
+    if (existing) {
+      await updateDoc(doc(db, "registrations", existing.id), newFields);
+      duplicateNoticeEl.textContent = "Ahli sedia ada (No. Keahlian: " + (existing.memberId || "—") + ") dikemas kini dengan maklumat tambahan.";
+      duplicateNoticeEl.hidden = false;
+      setTimeout(closeAddMemberModal, 1800);
+    } else {
+      var memberId = await generateUniqueMemberId();
+      await addDoc(collection(db, "registrations"), Object.assign({}, newFields, {
+        memberId: memberId,
+        tier: currentTier, // whichever Ahli/AJK/VIP tab was open when "+" was clicked
+        joinAs: "ahli",
+        consent: true, // admin-entered on the member's behalf; consent assumed obtained offline
+        submittedAt: serverTimestamp()
+      }));
+      duplicateNoticeEl.textContent = "Ahli baharu berjaya dicipta — No. Keahlian: " + memberId;
+      duplicateNoticeEl.hidden = false;
+      setTimeout(closeAddMemberModal, 1800);
+    }
+  } catch (err) {
+    submitErrorEl.textContent = "Gagal menyimpan: " + (err && err.message ? err.message : err);
+    submitErrorEl.hidden = false;
+  } finally {
+    submitAddMemberBtn.disabled = false;
+    submitAddMemberBtn.textContent = "Cipta Ahli";
+  }
+});
