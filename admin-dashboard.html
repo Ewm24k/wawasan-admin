@@ -68,6 +68,10 @@
           <button class="member-tab is-active" data-tier="ahli" type="button">Ahli <span class="count" id="countAhli">0</span></button>
           <button class="member-tab" data-tier="ajk" type="button">AJK <span class="count" id="countAjk">0</span></button>
           <button class="member-tab" data-tier="vip" type="button">VIP <span class="count" id="countVip">0</span></button>
+          <button class="add-member-btn" id="openAddMemberBtn" type="button" title="Tambah ahli baharu">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Tambah Ahli
+          </button>
         </div>
 
         <div class="search-row">
@@ -165,6 +169,119 @@
       </section>
 
     </div>
+  </div>
+</div>
+
+<!-- ============ ADD MEMBER MODAL ============ -->
+<div class="modal-overlay" id="addMemberOverlay" aria-hidden="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="addMemberTitle">
+    <div class="modal-panel__head">
+      <h2 id="addMemberTitle">Tambah Ahli Baharu</h2>
+      <button class="modal-close" id="closeAddMemberBtn" type="button" aria-label="Tutup">&times;</button>
+    </div>
+
+    <form id="addMemberForm" class="modal-form" novalidate>
+      <div class="mf-grid">
+        <div class="mf-field">
+          <label>Nama Penuh <span class="req">*</span></label>
+          <input type="text" id="mfFullName" data-required="true">
+          <span class="mf-error" id="err-mfFullName"></span>
+        </div>
+
+        <div class="mf-field">
+          <label>Jantina <span class="req">*</span></label>
+          <select id="mfGender" data-required="true">
+            <option value="">Pilih jantina</option>
+            <option value="lelaki">Lelaki</option>
+            <option value="perempuan">Perempuan</option>
+          </select>
+          <span class="mf-error" id="err-mfGender"></span>
+        </div>
+
+        <div class="mf-field">
+          <label>No. Kad Pengenalan <span class="req">*</span></label>
+          <input type="text" id="mfIcNumber" placeholder="900101-10-1234" data-required="true">
+          <span class="mf-error" id="err-mfIcNumber"></span>
+        </div>
+
+        <div class="mf-field mf-field--full">
+          <label>Tarikh Lahir <span class="req">*</span></label>
+          <div class="mf-dob-row">
+            <select id="mfDobDay" data-required="true"><option value="">Hari</option></select>
+            <select id="mfDobMonth" data-required="true"><option value="">Bulan</option></select>
+            <select id="mfDobYear" data-required="true"><option value="">Tahun</option></select>
+          </div>
+          <span class="mf-error" id="err-mfDob"></span>
+        </div>
+
+        <div class="mf-field">
+          <label>Tempat Lahir <span class="req">*</span></label>
+          <input type="text" id="mfBirthplace" data-required="true">
+          <span class="mf-error" id="err-mfBirthplace"></span>
+        </div>
+
+        <div class="mf-field">
+          <label>Pekerjaan <span class="req">*</span></label>
+          <input type="text" id="mfOccupation" data-required="true">
+          <span class="mf-error" id="err-mfOccupation"></span>
+        </div>
+
+        <div class="mf-field mf-field--full">
+          <label>Nama dan Alamat Majikan <span class="req">*</span></label>
+          <textarea id="mfEmployer" rows="2" data-required="true"></textarea>
+          <span class="mf-error" id="err-mfEmployer"></span>
+        </div>
+
+        <div class="mf-field mf-field--full">
+          <label>Alamat Kediaman <span class="req">*</span></label>
+          <textarea id="mfAddress" rows="2" data-required="true"></textarea>
+          <span class="mf-error" id="err-mfAddress"></span>
+        </div>
+
+        <div class="mf-field">
+          <label>No. Telefon <span class="req">*</span></label>
+          <input type="tel" id="mfPhone" placeholder="012-345 6789" data-required="true">
+          <span class="mf-error" id="err-mfPhone"></span>
+        </div>
+
+        <div class="mf-field">
+          <label>No. Telefon Kedua <span class="mf-optional">(pilihan)</span></label>
+          <input type="tel" id="mfPhone2" placeholder="012-345 6789">
+          <span class="mf-error" id="err-mfPhone2"></span>
+        </div>
+
+        <div class="mf-field">
+          <label>Alamat E-mel <span class="req">*</span></label>
+          <input type="email" id="mfEmail" data-required="true">
+          <span class="mf-error" id="err-mfEmail"></span>
+        </div>
+
+        <div class="mf-field mf-field--full">
+          <label>Cawangan Yang Dipohon <span class="req">*</span></label>
+          <div class="cawangan-dd" id="cawanganDd">
+            <button type="button" class="cawangan-dd__trigger" id="cawanganTrigger" aria-haspopup="listbox" aria-expanded="false">
+              <span id="cawanganTriggerLabel">Pilih cawangan (PDM)</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <input type="hidden" id="mfCawangan" data-required="true">
+
+            <div class="cawangan-dd__panel" id="cawanganPanel" hidden>
+              <input type="text" class="cawangan-dd__search" id="cawanganSearch" placeholder="Cari PDM...">
+              <div class="cawangan-dd__list" id="cawanganList"></div>
+            </div>
+          </div>
+          <span class="mf-error" id="err-mfCawangan"></span>
+        </div>
+      </div>
+
+      <p class="mf-notice" id="mfDuplicateNotice" hidden></p>
+      <p class="mf-notice mf-notice--error" id="mfSubmitError" hidden></p>
+
+      <div class="mf-actions">
+        <button type="button" class="btn-mini" id="cancelAddMemberBtn">Batal</button>
+        <button type="submit" class="btn-mini primary" id="submitAddMemberBtn" disabled>Cipta Ahli</button>
+      </div>
+    </form>
   </div>
 </div>
 
