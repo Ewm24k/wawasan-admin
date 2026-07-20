@@ -1061,6 +1061,7 @@ function openAddMemberModal(enableAi) {
     });
   } else {
     ocrContainer.style.display = "none";
+    summaryBox.style.display = "none";
     
     document.querySelectorAll(".t1era-hideable").forEach(function(el) {
       el.style.display = "block";
@@ -1075,6 +1076,43 @@ function closeAddMemberModal() {
   addMemberOverlay.classList.remove("is-open");
   addMemberOverlay.setAttribute("aria-hidden", "true");
 }
+
+// Choice Navigation Click Observers
+document.getElementById("openAddChoiceBtn").addEventListener("click", function() {
+  choiceOverlay.classList.add("is-open");
+  choiceOverlay.setAttribute("aria-hidden", "false");
+});
+
+document.getElementById("closeChoiceBtn").addEventListener("click", function() {
+  choiceOverlay.classList.remove("is-open");
+  choiceOverlay.setAttribute("aria-hidden", "true");
+});
+
+document.getElementById("chooseManualBtn").addEventListener("click", function() {
+  choiceOverlay.classList.remove("is-open");
+  choiceOverlay.setAttribute("aria-hidden", "true");
+  openAddMemberModal(false);
+});
+
+document.getElementById("chooseAiBtn").addEventListener("click", function() {
+  choiceOverlay.classList.remove("is-open");
+  choiceOverlay.setAttribute("aria-hidden", "true");
+  openAddMemberModal(true);
+});
+
+// Close Overlays by Background Clicking
+choiceOverlay.addEventListener("click", function(e) {
+  if (e.target === choiceOverlay) {
+    choiceOverlay.classList.remove("is-open");
+    choiceOverlay.setAttribute("aria-hidden", "true");
+  }
+});
+
+addMemberOverlay.addEventListener("click", function(e) {
+  if (e.target === addMemberOverlay) {
+    closeAddMemberModal();
+  }
+});
 
 document.getElementById("closeAddMemberBtn").addEventListener("click", closeAddMemberModal);
 document.getElementById("cancelAddMemberBtn").addEventListener("click", closeAddMemberModal);
@@ -1387,6 +1425,12 @@ function closeEditMemberModal() {
   editMemberOverlay.classList.remove("is-open");
   editMemberOverlay.setAttribute("aria-hidden", "true");
 }
+
+editMemberOverlay.addEventListener("click", function(e) {
+  if (e.target === editMemberOverlay) {
+    closeEditMemberModal();
+  }
+});
 
 document.getElementById("closeEditMemberBtn").addEventListener("click", closeEditMemberModal);
 document.getElementById("cancelEditMemberBtn").addEventListener("click", closeEditMemberModal);
