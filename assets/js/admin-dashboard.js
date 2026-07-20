@@ -22,7 +22,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ---------- Render Python API URL ---------- */
-// Update this value with your live backend service URL on Render
 const T1ERA_BACKEND_URL = "https://wawasan-sabak-pdm-ocr.onrender.com";
 
 /* ---------- Auth guard ---------- */
@@ -232,7 +231,6 @@ function renderMemberList() {
     });
   });
 
-  // Edit Action Listener [admin-dashboard.js]
   memberListEl.querySelectorAll(".edit-member-btn").forEach(function (btn) {
     btn.addEventListener("click", function (e) {
       e.stopPropagation();
@@ -776,7 +774,6 @@ function parseMyKadInfo(icStr) {
   var lastChar = clean.charAt(11);
 
   var yearSuffix = parseInt(yy, 10);
-  // Dynamically assumes dates under 27 refer to 2000s, and >= 27 refer to 1900s
   var currentYearLastTwo = new Date().getFullYear() % 100;
   var fullYear = (yearSuffix <= currentYearLastTwo ? 2000 : 1900) + yearSuffix;
 
@@ -794,7 +791,6 @@ function parseMyKadInfo(icStr) {
   };
 }
 
-// Global hook to auto-parse IC inputs for both forms
 function setupIcAutoParser(inputElementId, dayElementId, monthElementId, yearElementId, genderElementId) {
   var icInput = document.getElementById(inputElementId);
   icInput.addEventListener("input", function () {
@@ -890,18 +886,15 @@ function buildCawanganDropdown(containerId, triggerId, labelId, panelId, searchI
   });
 }
 
-// Initialize Cawangan dropdown for standard registration form
 buildCawanganDropdown("cawanganDd", "cawanganTrigger", "cawanganTriggerLabel", "cawanganPanel", "cawanganSearch", "cawanganList", "mfCawangan", function() {
   validateField(FIELDS.find(f => f.id === "mfCawangan"));
   updateSubmitState();
 });
 
-// Initialize Cawangan dropdown for member edit form
 buildCawanganDropdown("editCawanganDd", "editCawanganTrigger", "editCawanganTriggerLabel", "editCawanganPanel", "editCawanganSearch", "editCawanganList", "efCawangan", function() {
   validateField(EDIT_FIELDS.find(f => f.id === "efCawangan"));
   updateEditSubmitState();
 });
-
 
 /* ============================================================
    Add Member Modal with Choice Step & T1ERA AI OCR Pipeline
@@ -920,7 +913,6 @@ var MALAY_MONTHS_FULL = [
   "Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"
 ];
 
-// Populate date selector options
 function populateDobDropdowns(dayEl, monthEl, yearEl) {
   dayEl.innerHTML = '<option value="">Hari</option>';
   monthEl.innerHTML = '<option value="">Bulan</option>';
@@ -961,7 +953,6 @@ function isValidEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-// Updated standard registration constraints (Employer, Email, Phone2 are explicitly optional)
 var FIELDS = [
   { id: "mfFullName", required: true, validate: v => v.length >= 2 ? null : "Nama terlalu pendek." },
   { id: "mfGender", required: true, validate: () => null },
@@ -977,7 +968,6 @@ var FIELDS = [
 ];
 
 function validateField(f, isEdit = false) {
-  var prefix = isEdit ? "ef" : "mf";
   var el = document.getElementById(isEdit ? f.id.replace("mf", "ef") : f.id);
   var errEl = document.getElementById("err-" + (isEdit ? f.id.replace("mf", "ef") : f.id));
   if (!el) return true;
@@ -1072,7 +1062,6 @@ function openAddMemberModal(enableAi) {
   document.getElementById("err-mfDob").textContent = "";
   dobDay.closest(".mf-field").classList.remove("is-invalid");
   
-  // Set cawangan trigger defaults
   document.getElementById("cawanganTriggerLabel").textContent = "Pilih cawangan (PDM)";
   document.getElementById("cawanganTrigger").classList.remove("has-value");
   
@@ -1080,7 +1069,6 @@ function openAddMemberModal(enableAi) {
   submitErrorEl.hidden = true;
   submitAddMemberBtn.disabled = true;
 
-  // Toggle OCR upload wrapper
   var ocrContainer = document.getElementById("t1eraUploadContainer");
   if (enableAi) {
     ocrContainer.style.display = "block";
@@ -1155,12 +1143,10 @@ async function handleMyKadOcr(file) {
       throw new Error(data.error);
     }
 
-    // Auto fill form with extracted vision variables
     if (data.fullName) document.getElementById("mfFullName").value = data.fullName;
     if (data.icNumber) {
       var parsedIc = data.icNumber.replace(/[\s-]/g, "");
       document.getElementById("mfIcNumber").value = parsedIc;
-      // Auto-trigger MyKad parser to auto populate gender and birthdates
       var details = parseMyKadInfo(parsedIc);
       if (details) {
         document.getElementById("mfDobDay").value = details.day;
@@ -1253,7 +1239,6 @@ addMemberForm.addEventListener("submit", async function (e) {
     cawangan: document.getElementById("mfCawangan").value,
   };
 
-  // Check for existing records via matching identity card values
   var existing = allRegistrations.find(function (r) {
     return (
       r.icNumber &&
@@ -1292,9 +1277,8 @@ addMemberForm.addEventListener("submit", async function (e) {
   }
 });
 
-
 /* ============================================================
-   Member Editing Overlay Subsystem [admin-dashboard.js]
+   Member Editing Overlay Subsystem
    ============================================================ */
 var editMemberOverlay = document.getElementById("editMemberOverlay");
 var editMemberForm = document.getElementById("editMemberForm");
@@ -1350,7 +1334,6 @@ function openEditMemberModal(m) {
   document.getElementById("err-efDob").textContent = "";
   efDobDay.closest(".mf-field").classList.remove("is-invalid");
 
-  // Populate data
   document.getElementById("efId").value = m.id;
   document.getElementById("efFullName").value = m.fullName || "";
   document.getElementById("efGender").value = m.gender || "";
@@ -1364,7 +1347,6 @@ function openEditMemberModal(m) {
   document.getElementById("efEmail").value = m.email || "";
   document.getElementById("efCawangan").value = m.cawangan || "";
 
-  // Set cawangan trigger defaults
   var editCawLabel = document.getElementById("editCawanganTriggerLabel");
   var editCawTrigger = document.getElementById("editCawanganTrigger");
   if (m.cawangan) {
@@ -1375,7 +1357,6 @@ function openEditMemberModal(m) {
     editCawTrigger.classList.remove("has-value");
   }
 
-  // Prepopulate Dob select options
   if (m.dob && typeof m.dob === "string") {
     var parts = m.dob.split("-");
     if (parts.length === 3) {
