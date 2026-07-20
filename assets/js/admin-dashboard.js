@@ -1069,12 +1069,26 @@ function openAddMemberModal(enableAi) {
   submitErrorEl.hidden = true;
   submitAddMemberBtn.disabled = true;
 
+  // Toggle OCR upload wrapper
   var ocrContainer = document.getElementById("t1eraUploadContainer");
+  var summaryBox = document.getElementById("t1eraSummary");
+  
   if (enableAi) {
     ocrContainer.style.display = "block";
+    summaryBox.style.display = "none";
     document.getElementById("t1eraProgress").style.display = "none";
+    
+    // Hide inputs that will be auto-filled by IC Vision System
+    document.querySelectorAll(".t1era-hideable").forEach(function(el) {
+      el.style.display = "none";
+    });
   } else {
     ocrContainer.style.display = "none";
+    
+    // Ensure all inputs are fully visible in manual mode
+    document.querySelectorAll(".t1era-hideable").forEach(function(el) {
+      el.style.display = "block";
+    });
   }
 
   addMemberOverlay.classList.add("is-open");
@@ -1096,6 +1110,7 @@ var t1eraFileInput = document.getElementById("t1eraFileInput");
 var t1eraDropzone = document.getElementById("t1eraDropzone");
 var t1eraProgress = document.getElementById("t1eraProgress");
 var t1eraProgressText = document.getElementById("t1eraProgressText");
+var t1eraSummaryBox = document.getElementById("t1eraSummary");
 
 t1eraDropzone.addEventListener("click", () => t1eraFileInput.click());
 
@@ -1124,6 +1139,7 @@ async function handleMyKadOcr(file) {
   t1eraProgress.style.display = "flex";
   t1eraProgressText.textContent = "Mengimbas imej Kad Pengenalan...";
   t1eraProgressText.style.color = "var(--blue)";
+  t1eraSummaryBox.style.display = "none";
 
   var formData = new FormData();
   formData.append("file", file);
@@ -1143,6 +1159,7 @@ async function handleMyKadOcr(file) {
       throw new Error(data.error);
     }
 
+    // Auto-fill hidden elements with processed variables
     if (data.fullName) document.getElementById("mfFullName").value = data.fullName;
     if (data.icNumber) {
       var parsedIc = data.icNumber.replace(/[\s-]/g, "");
@@ -1158,11 +1175,30 @@ async function handleMyKadOcr(file) {
     if (data.address) document.getElementById("mfAddress").value = data.address;
     if (data.birthplace) document.getElementById("mfBirthplace").value = data.birthplace;
 
+    // Display summary data to the admin
+    document.getElementById("sumFullName").textContent = data.fullName || "—";
+    document.getElementById("sumIcNumber").textContent = data.icNumber || "—";
+    
+    var rawGender = document.getElementById("mfGender").value;
+    document.getElementById("sumGender").textContent = rawGender === "lelaki" ? "Lelaki" : (rawGender === "perempuan" ? "Perempuan" : "—");
+    
+    var dobDayVal = document.getElementById("mfDobDay").value;
+    var dobMonthVal = document.getElementById("mfDobMonth").value;
+    var dobYearVal = document.getElementById("mfDobYear").value;
+    if (dobDayVal && dobMonthVal && dobYearVal) {
+      document.getElementById("sumDob").textContent = dobDayVal + " " + MALAY_MONTHS_FULL[parseInt(dobMonthVal, 10) - 1] + " " + dobYearVal;
+    } else {
+      document.getElementById("sumDob").textContent = "—";
+    }
+    document.getElementById("sumAddress").textContent = data.address || "—";
+
     t1eraProgressText.textContent = "✓ Selesai mengekstrak data MyKad!";
     t1eraProgressText.style.color = "var(--green)";
+    
     setTimeout(function() {
       t1eraProgress.style.display = "none";
-    }, 2000);
+      t1eraSummaryBox.style.display = "block";
+    }, 1500);
 
     updateSubmitState();
 
