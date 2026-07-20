@@ -216,17 +216,31 @@
         <div class="t1era-spinner"></div>
         <span id="t1eraProgressText">Mengekstrak maklumat menerusi AI...</span>
       </div>
+
+      <!-- Detected details preview summary inside T1ERA workflow -->
+      <div class="t1era-summary" id="t1eraSummary" style="display:none;">
+        <h4>✓ Maklumat MyKad Berjaya Diekstrak</h4>
+        <div class="t1era-summary__grid">
+          <div><span class="lbl">Nama Penuh</span><span class="val" id="sumFullName">-</span></div>
+          <div><span class="lbl">No. IC</span><span class="val" id="sumIcNumber">-</span></div>
+          <div><span class="lbl">Jantina</span><span class="val" id="sumGender">-</span></div>
+          <div><span class="lbl">Tarikh Lahir</span><span class="val" id="sumDob">-</span></div>
+          <div style="grid-column: 1 / -1;"><span class="lbl">Alamat Kediaman</span><span class="val" id="sumAddress">-</span></div>
+        </div>
+      </div>
     </div>
 
     <form id="addMemberForm" class="modal-form" novalidate>
       <div class="mf-grid">
-        <div class="mf-field">
+        
+        <!-- Extracted from IC (Hidden in T1ERA Mode, Visible in Manual Mode) -->
+        <div class="mf-field t1era-hideable">
           <label>Nama Penuh <span class="req">*</span></label>
           <input type="text" id="mfFullName" data-required="true">
           <span class="mf-error" id="err-mfFullName"></span>
         </div>
 
-        <div class="mf-field">
+        <div class="mf-field t1era-hideable">
           <label>Jantina <span class="req">*</span></label>
           <select id="mfGender" data-required="true">
             <option value="">Pilih jantina</option>
@@ -236,13 +250,13 @@
           <span class="mf-error" id="err-mfGender"></span>
         </div>
 
-        <div class="mf-field">
+        <div class="mf-field t1era-hideable">
           <label>No. Kad Pengenalan <span class="req">*</span></label>
           <input type="text" id="mfIcNumber" placeholder="900101-10-1234" data-required="true">
           <span class="mf-error" id="err-mfIcNumber"></span>
         </div>
 
-        <div class="mf-field mf-field--full">
+        <div class="mf-field mf-field--full t1era-hideable">
           <label>Tarikh Lahir <span class="req">*</span></label>
           <div class="mf-dob-row">
             <select id="mfDobDay" data-required="true"><option value="">Hari</option></select>
@@ -252,6 +266,13 @@
           <span class="mf-error" id="err-mfDob"></span>
         </div>
 
+        <div class="mf-field mf-field--full t1era-hideable">
+          <label>Alamat Kediaman <span class="req">*</span></label>
+          <textarea id="mfAddress" rows="2" data-required="true"></textarea>
+          <span class="mf-error" id="err-mfAddress"></span>
+        </div>
+
+        <!-- Missing details not from IC (Always visible in both workflows) -->
         <div class="mf-field">
           <label>Tempat Lahir <span class="req">*</span></label>
           <input type="text" id="mfBirthplace" data-required="true">
@@ -268,12 +289,6 @@
           <label>Nama dan Alamat Majikan <span class="mf-optional">(pilihan)</span></label>
           <textarea id="mfEmployer" rows="2"></textarea>
           <span class="mf-error" id="err-mfEmployer"></span>
-        </div>
-
-        <div class="mf-field mf-field--full">
-          <label>Alamat Kediaman <span class="req">*</span></label>
-          <textarea id="mfAddress" rows="2" data-required="true"></textarea>
-          <span class="mf-error" id="err-mfAddress"></span>
         </div>
 
         <div class="mf-field">
