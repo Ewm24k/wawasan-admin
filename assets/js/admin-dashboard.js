@@ -22,7 +22,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ---------- Render Python API URL ---------- */
-const T1ERA_BACKEND_URL = "https://wawasan-sabak-pdm-ocr.onrender.com";
+const T1ERA_BACKEND_URL = "https://wawasan-admin.onrender.com";
 
 /* ---------- Auth guard ---------- */
 var loadingEl = document.getElementById("dashLoading");
@@ -1027,27 +1027,6 @@ FIELDS.forEach(function (f) {
 });
 [dobDay, dobMonth, dobYear].forEach(el => el.addEventListener("change", updateSubmitState));
 
-/* ---------- Method Choice Overlay Navigation ---------- */
-document.getElementById("openAddChoiceBtn").addEventListener("click", function() {
-  choiceOverlay.classList.add("is-open");
-  choiceOverlay.setAttribute("aria-hidden", "false");
-});
-
-document.getElementById("closeChoiceBtn").addEventListener("click", function() {
-  choiceOverlay.classList.remove("is-open");
-  choiceOverlay.setAttribute("aria-hidden", "true");
-});
-
-document.getElementById("chooseManualBtn").addEventListener("click", function() {
-  choiceOverlay.classList.remove("is-open");
-  openAddMemberModal(false);
-});
-
-document.getElementById("chooseAiBtn").addEventListener("click", function() {
-  choiceOverlay.classList.remove("is-open");
-  openAddMemberModal(true);
-});
-
 /* ---------- Open / close modal handlers ---------- */
 function openAddMemberModal(enableAi) {
   addMemberForm.reset();
@@ -1069,7 +1048,6 @@ function openAddMemberModal(enableAi) {
   submitErrorEl.hidden = true;
   submitAddMemberBtn.disabled = true;
 
-  // Toggle OCR upload wrapper
   var ocrContainer = document.getElementById("t1eraUploadContainer");
   var summaryBox = document.getElementById("t1eraSummary");
   
@@ -1078,14 +1056,12 @@ function openAddMemberModal(enableAi) {
     summaryBox.style.display = "none";
     document.getElementById("t1eraProgress").style.display = "none";
     
-    // Hide inputs that will be auto-filled by IC Vision System
     document.querySelectorAll(".t1era-hideable").forEach(function(el) {
       el.style.display = "none";
     });
   } else {
     ocrContainer.style.display = "none";
     
-    // Ensure all inputs are fully visible in manual mode
     document.querySelectorAll(".t1era-hideable").forEach(function(el) {
       el.style.display = "block";
     });
@@ -1159,7 +1135,6 @@ async function handleMyKadOcr(file) {
       throw new Error(data.error);
     }
 
-    // Auto-fill hidden elements with processed variables
     if (data.fullName) document.getElementById("mfFullName").value = data.fullName;
     if (data.icNumber) {
       var parsedIc = data.icNumber.replace(/[\s-]/g, "");
@@ -1175,7 +1150,6 @@ async function handleMyKadOcr(file) {
     if (data.address) document.getElementById("mfAddress").value = data.address;
     if (data.birthplace) document.getElementById("mfBirthplace").value = data.birthplace;
 
-    // Display summary data to the admin
     document.getElementById("sumFullName").textContent = data.fullName || "—";
     document.getElementById("sumIcNumber").textContent = data.icNumber || "—";
     
