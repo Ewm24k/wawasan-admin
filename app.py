@@ -7,15 +7,30 @@ from openai import OpenAI
 app = Flask(__name__)
 CORS(app)
 
+# Defensive Initialization: Prevent Gunicorn from crashing if key is missing
 api_key = os.environ.get("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key)
+if api_key:
+    client = OpenAI(api_key=api_key)
+else:
+    client = None
+    print("WARNING: OPENAI_API_KEY is not set in the environment variables.")
 
 @app.route("/", methods=["GET"])
 def index():
-    return jsonify({"status": "running", "service": "Wawasan Sabak MyKad Vision Processor"})
+    return jsonify({
+        "status": "running", 
+        "service": "Wawasan Sabak MyKad Vision Processor",
+        "api_configured": client is not None
+    })
 
 @app.route("/extract-ic", methods=["POST"])
 def extract_ic():
+    # Return a clean API error if OpenAI client was not initialized
+    if not client:
+        return jsonify({
+            "error": "OpenAI API Key is not configured on the server. Please add OPENAI_API_KEY to Render environment variables."
+        }), 500
+
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
     
