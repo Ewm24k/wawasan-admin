@@ -58,7 +58,7 @@ def extract_ic():
             "- 'fullName': Extract the full name.\n"
             "- 'icNumber': Extract the 12-digit ID without dashes (e.g. 911210105837).\n"
             "- 'address': Extract the residential address, spacing lines properly with commas.\n"
-            "- 'birthplace': Identify the State of birth (e.g., SELANGOR, PERAK, KUALA LUMPUR) based on standard MyKad birth codes if available, else leave as blank string."
+            "- 'birthplace': Identify the State of birth (e.g., SELANGOR, PERAK, KUALA LUMPUR) based on MyKad birth codes if available, else leave as blank string."
         )
 
         response = client.chat.completions.create(
@@ -78,7 +78,7 @@ def extract_ic():
                     ]
                 }
             ],
-            max_tokens=300
+            max_completion_tokens=300  # Upgraded parameter for gpt-5.4-mini
         )
 
         raw_response = response.choices[0].message.content
@@ -134,7 +134,7 @@ def risik_tokoh():
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Sila buat risikan lingkaran dalaman tokoh berikut: {leader_name}"}
             ],
-            max_tokens=1800
+            max_completion_tokens=1800  # Upgraded parameter for gpt-5.4-mini
         )
 
         raw_response = response.choices[0].message.content
