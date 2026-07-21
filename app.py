@@ -189,7 +189,7 @@ Bagi setiap individu yang dipertimbangkan sebagai ahli Lingkaran Dalaman (Inner 
 Jangan hanya menyemak sama ada individu tersebut masih bersama pemimpin atau telah dipecat. Sebaliknya, sahkan semua perkara berikut:
 1. Status Individu: Masih hidup? Masih aktif dalam politik/organisasi? Sudah bersara? Meninggalkan politik? Meninggal dunia?
 2. Keahlian Terkini: Parti politik semasa, Organisasi semasa, Syarikat semasa (jika sektor korporat), NGO atau institusi semasa (jika berkaitan). Jika pernah bertukar organisasi, paparkan kronologi ringkas.
-3. Jawatan Terkini: Nyatakan jawatan rasmi semasa.
+3. Jawatan Terkini: Nyatakan jawatan rasmi semasa (Contoh: Presiden, Timbalan Presiden, Ketua Bahagian, ADUN, Ahli Parlimen, Senator, CEO, Pengarah, Pengerusi). Jika tiada jawatan rasmi, nyatakan: \"Tiada jawatan rasmi yang dapat disahkan pada tarikh analisis.\"
 4. Hubungan Dengan Pemimpin Yang Dianalisis: Sangat rapat, Rakan strategik, Ahli pasukan rasmi, Penyokong, Neutral, Bekas sekutu, Lawan politik. Jangan menganggap hubungan masih wujud hanya kerana pernah bekerjasama.
 5. Sejarah Perubahan: Tarikh perubahan, Sebab perubahan, Implikasi terhadap hubungan dengan pemimpin.
 6. Bukti Terkini: Cari bukti daripada laporan bertarikh yang menunjukkan kedudukan terkini individu tersebut.
@@ -255,7 +255,16 @@ Analisis sama ada pemimpin tersebut sedang:
 - mengimbangi kuasa,
 - memperluaskan pengaruh,
 - atau membentuk gabungan baharu.
-Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
+Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa.
+
+# Format Output MESTI dalam JSON dengan kunci berikut:
+1. 'tree': Objek mengandungi sub-key:
+   - 'leader': Nama pemimpin yang disiasat.
+   - 'strategist': Nama Strategist/Teknokrat hidup (mesti berbeza dengan leader).
+   - 'gatekeeper': Nama Political Gatekeeper hidup (mesti berbeza dengan leader).
+   - 'communicator': Nama Communications Strategist hidup (mesti berbeza dengan leader).
+2. 'full_text': Teks analisis lengkap mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk Struktur Analisis asal di atas serta mematuhi LANGKAH 3A.
+3. 'sources': Array objek rujukan mengandungi 'title' dan 'url' yang sah."""
 
     input_text = (
         f"Sila lakukan analisis risikan untuk tokoh pemimpin: {leader_name}.\n\n"
@@ -265,37 +274,45 @@ Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
     )
 
     try:
-        # Native OpenAI Responses API Call (Stored Prompts & Web Search)
-        # We explicitly omit 'model' and 'max_output_tokens' to rely on the stored prompt configurations
-        # and prevent validation conflicts with prompt_id
-        response = client.responses.create(
-            prompt={
-                "id": "pmpt_6a5f53144d7c81909a4371936c068ed605e1fefca4708ece",
-                "version": "1"
-            },
-            input=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "input_text",
-                            "text": input_text
-                        }
-                    ]
-                }
-            ],
-            tools=[
-                {
-                    "type": "web_search",
-                    "user_location": {
-                        "type": "approximate",
-                        "country": "MY"
-                    },
-                    "search_context_size": "high"
-                }
-            ],
-            store=True
-        )
+        try:
+            # Peringkat 1: Cuba panggil Stored Prompt rasmi seperti yang ditetapkan
+            response = client.responses.create(
+                prompt={
+                    "id": "pmpt_6a5f53144d7c81909a4371936c068ed605e1fefca4708ece",
+                    "version": "1"
+                },
+                input=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "input_text",
+                                "text": input_text
+                            }
+                        ]
+                    }
+                ],
+                tools=[
+                    {
+                        "type": "web_search"
+                    }
+                ],
+                store=True
+            )
+        except Exception as prompt_error:
+            # Peringkat 2: Pelan Sandaran Tegar (Fallback) jika Stored Prompt ID ralat atau tidak ditemui
+            print(f"Stored prompt pmpt_... gagal: {prompt_error}. Menjalankan sandaran asli Responses API...", file=sys.stderr)
+            response = client.responses.create(
+                model="gpt-5-mini",
+                instructions=system_prompt,
+                input=f"Sila buat risikan lingkaran dalaman tokoh berikut: {leader_name}. Tarikh sistem semasa: {current_date_str}.",
+                tools=[
+                    {
+                        "type": "web_search"
+                    }
+                ],
+                store=True
+            )
 
         # Extraction logic
         raw_response = ""
