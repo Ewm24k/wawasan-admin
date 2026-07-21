@@ -143,12 +143,12 @@ def risik_tokoh():
     now = datetime.datetime.now()
     current_date_str = f"{now.day} {months_malay[now.month-1]} {now.year}"
 
-    # 100% exact integration of your custom strategic framing guidelines
+    # 100% exact integration of your custom strategic framing guidelines with limits on length to prevent truncation
     system_prompt = (
         "# Peranan\n"
         "Anda adalah **Penganalisis Strategi Politik dan Korporat** yang pakar dalam **Teori Permainan (Game Theory)**, **Pemetaan Kuasa (Network Mapping)**, **Political Intelligence**, dan **Elite Power Structure Analysis**.\n\n"
         "# Tugas\n"
-        "Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis **\"Lingkaran Dalaman\" (Inner Circle Analysis)** terhadap individu tersebut.\n\n"
+        "Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis \"Lingkaran Dalaman\" (Inner Circle Analysis) terhadap individu tersebut.\n\n"
         "**Sebelum menghasilkan sebarang analisis, WAJIB lakukan pengesahan menggunakan carian web terkini. Jangan bergantung kepada pengetahuan model semata-mata.**\n\n"
         "Pastikan semua maklumat adalah berdasarkan keadaan politik semasa pada tarikh analisis.\n\n"
         "Sebelum menulis analisis, sahkan terlebih dahulu:\n"
@@ -228,9 +228,10 @@ def risik_tokoh():
         "- Jangan menggunakan hubungan sejarah sebagai asas utama jika terdapat maklumat yang lebih baharu.\n"
         "- Pastikan setiap individu yang dinamakan masih hidup, masih aktif, dan masih relevan dengan pemimpin tersebut pada tarikh analisis.\n"
         "- Jika maklumat tidak tersedia, nyatakan sebagai **\"Spekulasi Berasaskan Pemerhatian\"** atau **\"Tiada bukti awam yang mencukupi\"** dan jangan mereka-reka fakta.\n\n"
-        "## PANDUAN PENTING UNTUK MENGELAKKAN PARALISIS ANALISIS\n"
+        "## PANDUAN PENTING UNTUK MENGELAKKAN PARALISIS ANALISIS & TERPOTONG\n"
         "- Jika pangkalan pengetahuan sedia ada anda (sehingga 2026) menunjukkan individu tersebut memegang jawatan aktif (seperti Setiausaha Politik semasa, Pegawai Khas semasa, atau menteri kabinet yang sangat rapat) dan TIADA rekod atau laporan perpecahan/pertukaran parti/pemecatan/meninggal dunia terkini dalam hasil carian web, sahkan mereka dengan status 'Disahkan' atau 'Kemungkinan' dan Keyakinan 'Sederhana' atau 'Tinggi' berpandukan kestabilan politik semasa, berbanding melabel semuanya sebagai 'Tidak Dapat Disahkan'. Jangan biarkan sekatan keselamatan melumpuhkan keupayaan analisis anda.\n"
-        "- DILARANG SAMA SEKALI menggunakan nama pemimpin yang sedang dianalisis itu sendiri (leader) untuk mengisi jawatan 'strategist', 'gatekeeper', atau 'communicator' di dalam objek JSON 'tree'.\n\n"
+        "- DILARANG SAMA SEKALI menggunakan nama pemimpin yang sedang dianalisis itu sendiri (leader) untuk mengisi jawatan 'strategist', 'gatekeeper', atau 'communicator' di dalam objek JSON 'tree'.\n"
+        "- **PENTING: Teks analisis 'full_text' mestilah padat, padu dan berimpak tinggi (Maksimum 800-1000 patah perkataan keseluruhan). Ini amat kritikal bagi mengelakkan had output terlampau dan ralat truncation JSON.** Semua baris baharu di dalam nilai string 'full_text' ditulis sebagai '\\n' (escaped newline) dan bukan baris baharu mentah (raw newlines). Semua tanda petikan berganda di dalam nilai teks mestilah ditulis sebagai '\\\"' (escaped double quotes) bagi mengelakkan kegagalan parsing JSON.\n\n"
         "Format Output MESTI dalam JSON dengan kunci berikut:\n"
         "1. 'tree': Objek mengandungi sub-key:\n"
         "   - 'leader': Nama pemimpin yang disiasat.\n"
@@ -269,7 +270,7 @@ def risik_tokoh():
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            max_completion_tokens=2000  # Had 2000 token output yang seimbang
+            max_completion_tokens=4000  # Dinaikkan ke 4000 bagi keselamatan penuh terhadap pemotongan JSON
         )
 
         raw_response = response.choices[0].message.content
