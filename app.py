@@ -3,6 +3,7 @@ import base64
 import sys
 import traceback
 import datetime
+import requests  # Diperlukan untuk membuat carian web Tavily
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
@@ -18,12 +19,41 @@ else:
     client = None
     print("WARNING: OPENAI_API_KEY is not set in the environment variables.", file=sys.stderr)
 
+# Ambil Tavily API Key dari persekitaran Render
+tavily_key = os.environ.get("TAVILY_API_KEY")
+
+
+def dapatkan_carian_web(query_text):
+    """
+    Membuat carian web masa nyata menggunakan Tavily Search API.
+    Memberikan 1,000 carian percuma setiap bulan.
+    """
+    if not tavily_key:
+        print("Tavily API Key tiada. Carian internet dilangkau.", file=sys.stderr)
+        return []
+    try:
+        url = "https://api.tavily.com/search"
+        payload = {
+            "api_key": tavily_key,
+            "query": query_text,
+            "search_depth": "basic",  # Menggunakan mod basic (1 kredit) untuk penjimatan maksimum
+            "max_results": 5
+        }
+        res = requests.post(url, json=payload, timeout=8)
+        if res.ok:
+            return res.json().get("results", [])
+    except Exception as e:
+        print(f"Carian Tavily Gagal: {str(e)}", file=sys.stderr)
+    return []
+
+
 @app.route("/", methods=["GET"])
 def index():
     return jsonify({
         "status": "running", 
         "service": "Wawasan Sabak MyKad Vision Processor and Intel Agent",
-        "api_configured": client is not None
+        "api_configured": client is not None,
+        "tavily_configured": tavily_key is not None
     })
 
 @app.route("/extract-ic", methods=["POST"])
@@ -160,13 +190,26 @@ def risik_tokoh():
         "3. 'sources': Array objek rujukan mengandungi 'title' dan 'url' yang sah."
     )
 
+    # Langkah 2 Terbina (WAJIB): Lakukan carian web sebelum menghantar ke LLM
+    search_query = f"{leader_name} lingkaran dalaman orang kanan trusted core 2026"
+    results = dapatkan_carian_web(search_query)
+
+    user_content = f"Sila buat risikan lingkaran dalaman tokoh berikut: {leader_name}"
+    
+    # Jika carian web berjaya, masukkan hasil carian sebagai konteks utama
+    if results:
+        context_str = "\n\nMAKLUMAT CARIAN WEB TERKINI (Gunakan maklumat ini untuk analisis anda):\n"
+        for idx, r in enumerate(results):
+            context_str += f"Sumber [{idx+1}]: {r.get('title')}\nURL: {r.get('url')}\nKandungan: {r.get('content')}\n\n"
+        user_content += context_str
+
     try:
         response = client.chat.completions.create(
             model="gpt-5.4-mini",
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Sila buat risikan lingkaran dalaman tokoh berikut: {leader_name}"}
+                {"role": "user", "content": user_content}
             ],
             max_completion_tokens=1800  # Upgraded parameter for gpt-5.4-mini
         )
