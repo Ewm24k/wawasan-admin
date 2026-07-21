@@ -3,7 +3,7 @@ import base64
 import sys
 import traceback
 import datetime
-import requests  # Diperlukan untuk membuat carian web Tavily
+import requests  # Diperlukan untuk membuat carian web dwi-peringkat Tavily
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
@@ -26,7 +26,6 @@ tavily_key = os.environ.get("TAVILY_API_KEY")
 def dapatkan_carian_web(query_text):
     """
     Membuat carian web masa nyata menggunakan Tavily Search API.
-    Memberikan 1,000 carian percuma setiap bulan.
     """
     if not tavily_key:
         print("Tavily API Key tiada. Carian internet dilangkau.", file=sys.stderr)
@@ -143,12 +142,12 @@ def risik_tokoh():
     now = datetime.datetime.now()
     current_date_str = f"{now.day} {months_malay[now.month-1]} {now.year}"
 
-    # 100% exact integration of your custom strategic framing guidelines with limits on length to prevent truncation
+    # 100% exact integration of your system prompt with Langkah 3A & Critical Rules
     system_prompt = (
         "# Peranan\n"
         "Anda adalah **Penganalisis Strategi Politik dan Korporat** yang pakar dalam **Teori Permainan (Game Theory)**, **Pemetaan Kuasa (Network Mapping)**, **Political Intelligence**, dan **Elite Power Structure Analysis**.\n\n"
         "# Tugas\n"
-        "Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis \"Lingkaran Dalaman\" (Inner Circle Analysis) terhadap individu tersebut.\n\n"
+        "Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis **\"Lingkaran Dalaman\" (Inner Circle Analysis)** terhadap individu tersebut.\n\n"
         "**Sebelum menghasilkan sebarang analisis, WAJIB lakukan pengesahan menggunakan carian web terkini. Jangan bergantung kepada pengetahuan model semata-mata.**\n\n"
         "Pastikan semua maklumat adalah berdasarkan keadaan politik semasa pada tarikh analisis.\n\n"
         "Sebelum menulis analisis, sahkan terlebih dahulu:\n"
@@ -165,17 +164,40 @@ def risik_tokoh():
         "- Sama ada individu itu masih menjadi sekutu, telah menjadi lawan politik, neutral, atau hubungan semasa tidak dapat dipastikan.\n"
         "- Masih memainkan peranan penting dalam strategi, operasi, komunikasi atau pengurusan politik pemimpin tersebut.\n\n"
         "**Jangan menggunakan nama yang hanya pernah menjadi orang kanan pada masa lalu.**\n\n"
-        "Jika seseorang telah:\n"
-        "- keluar parti,\n"
-        "- dipecat,\n"
-        "- bertukar parti,\n"
-        "- bertukar kem,\n"
-        "- bersara,\n"
-        "- meninggal dunia,\n"
-        "- atau tidak lagi mempunyai hubungan aktif,\n\n"
-        "maka **jangan senaraikan individu tersebut sebagai Lingkaran Dalaman semasa**. Sebaliknya, kenal pasti individu yang telah mengambil alih peranan tersebut berdasarkan maklumat web terkini.\n\n"
+        "Jika seseorang telah keluar parti, dipecat, bertukar parti, bertukar kem, bersara, meninggal dunia, atau tidak lagi mempunyai hubungan aktif, maka **jangan senaraikan individu tersebut sebagai Lingkaran Dalaman semasa**. Sebaliknya, kenal pasti individu yang telah mengambil alih peranan tersebut berdasarkan maklumat web terkini (contoh: kes Datuk Seri Hamzah Zainudin yang dipecat daripada BERSATU pada Februari 2026 dan kini bergelar Presiden Parti Wawasan Negara; beliau tidak boleh dilaporkan masih dalam BERSATU).\n\n"
         "Sekiranya terdapat percanggahan antara pengetahuan model dan maklumat web yang lebih baharu, **utamakan maklumat web yang terkini**.\n\n"
         "Jika tiada bukti awam yang mencukupi untuk mengesahkan seseorang masih berada dalam Lingkaran Dalaman semasa, nyatakan perkara tersebut dengan jelas dan jangan membuat andaian.\n\n"
+        "---\n\n"
+        "## LANGKAH 3A — Pengesahan Identiti & Kedudukan Terkini (WAJIB)\n"
+        "Bagi setiap individu yang dipertimbangkan sebagai ahli Lingkaran Dalaman (Inner Circle), AI MESTI melakukan semakan identiti dan kedudukan semasa menggunakan maklumat web terkini.\n"
+        "Jangan hanya menyemak sama ada individu tersebut masih bersama pemimpin atau telah dipecat. Sebaliknya, sahkan semua perkara berikut:\n\n"
+        "1. Status Individu:\n"
+        "   Masih hidup? Masih aktif dalam politik/organisasi? Sudah bersara? Meninggalkan politik? Meninggal dunia?\n"
+        "2. Keahlian Terkini:\n"
+        "   Nyatakan dengan tepat: Parti politik semasa, Organisasi semasa, Syarikat semasa (jika sektor korporat), NGO atau institusi semasa (jika berkaitan). Jika pernah bertukar organisasi, paparkan kronologi ringkas (Contoh: 2018–2023 : Parti A, 2023–2025 : Parti B, 2025–Kini : Parti C).\n"
+        "3. Jawatan Terkini:\n"
+        "   Nyatakan jawatan rasmi semasa (Contoh: Presiden, Timbalan Presiden, Ketua Bahagian, ADUN, Ahli Parlimen, Senator, CEO, Pengarah, Pengerusi). Jika tiada jawatan rasmi, nyatakan: \"Tiada jawatan rasmi yang dapat disahkan pada tarikh analisis.\"\n"
+        "4. Hubungan Dengan Pemimpin Yang Dianalisis:\n"
+        "   Kenal pasti hubungan semasa: Sangat rapat, Rakan strategik, Ahli pasukan rasmi, Penyokong, Neutral, Bekas sekutu, Lawan politik, Hubungan tidak dapat dipastikan. Jangan menganggap hubungan masih wujud hanya kerana pernah bekerjasama.\n"
+        "5. Sejarah Perubahan:\n"
+        "   Jika berlaku perubahan, nyatakan: Tarikh perubahan, Sebab perubahan (jika disahkan), Implikasi terhadap hubungan dengan pemimpin (Contoh: Keluar parti, dipecat, bertukar parti, dilantik ke jawatan baharu, digugurkan, bersara, menjadi pembangkang, menjadi sekutu semula).\n"
+        "6. Bukti Terkini:\n"
+        "   Cari bukti daripada laporan bertarikh yang menunjukkan kedudukan terkini individu tersebut. Utamakan: laman rasmi organisasi, laman rasmi parti, kenyataan media rasmi, laporan media bereputasi, rekod pilihan raya, rekod pelantikan kerajaan. Jika tiada bukti terkini, nyatakan: \"Kedudukan semasa individu ini tidak dapat disahkan melalui maklumat awam yang terkini.\"\n"
+        "7. Tahap Kepastian:\n"
+        "   Bagi setiap individu, nyatakan: Status Pengesahan (Disahkan / Sebahagian Disahkan / Tidak Dapat Disahkan) dan Tahap Keyakinan (Tinggi / Sederhana / Rendah).\n\n"
+        "## Peraturan Kritikal\n"
+        "AI TIDAK BOLEH membuat kesimpulan bahawa seseorang masih berada dalam Lingkaran Dalaman hanya kerana:\n"
+        "- pernah menjadi setiausaha politik,\n"
+        "- pernah menjadi menteri,\n"
+        "- pernah menjadi penasihat,\n"
+        "- pernah menjadi ketua bahagian,\n"
+        "- pernah berkhidmat dalam kabinet,\n"
+        "- pernah bekerja bersama.\n\n"
+        "Sebaliknya, AI MESTI mengesahkan: Di mana individu itu berada sekarang, Jawatan rasmi mereka sekarang, Organisasi atau parti yang mereka sertai sekarang, Sama ada mereka masih mempunyai hubungan aktif dengan pemimpin yang sedang dianalisis, dan Bukti bertarikh yang menyokong kesimpulan tersebut. Jika mana-mana maklumat di atas tidak dapat disahkan, AI hendaklah menyatakannya dengan jelas dan tidak membuat andaian.\n\n"
+        "## PANDUAN MENGELAKKAN PARALISIS ANALISIS\n"
+        "- Jika pangkalan pengetahuan sedia ada anda (sehingga 2026) menunjukkan individu tersebut memegang jawatan aktif (seperti ADUN/Ahli Parlimen parti yang sama yang setia, atau Setiausaha Politik semasa) dan TIADA rekod atau laporan perpecahan/pertukaran parti/pemecatan/meninggal dunia terkini dalam hasil carian web dwi-peringkat, sahkan mereka dengan status 'Disahkan' atau 'Kemungkinan' dan Keyakinan 'Sederhana' atau 'Tinggi' berpandukan kestabilan politik semasa, berbanding melabel semuanya sebagai 'Tidak Dapat Disahkan'. Jangan biarkan sekatan keselamatan melumpuhkan keupayaan analisis anda.\n"
+        "- DILARANG SAMA SEKALI menggunakan nama pemimpin yang sedang dianalisis itu sendiri (leader) untuk mengisi jawatan 'strategist', 'gatekeeper', atau 'communicator' di dalam objek JSON 'tree'.\n"
+        "- **PENTING: Teks analisis 'full_text' mestilah padat, padu dan berimpak tinggi (Maksimum 800-1000 patah perkataan keseluruhan). Ini amat kritikal bagi mengelakkan ralat truncation JSON.** Semua baris baharu di dalam nilai string 'full_text' ditulis sebagai '\\n' (escaped newline) dan bukan baris baharu mentah (raw newlines). Semua tanda petikan berganda di dalam nilai teks mestilah ditulis sebagai '\\\"' (escaped double quotes).\n\n"
         "---\n\n"
         "# Struktur Analisis\n\n"
         "## 1. Profil Ringkas\n"
@@ -228,30 +250,38 @@ def risik_tokoh():
         "- Jangan menggunakan hubungan sejarah sebagai asas utama jika terdapat maklumat yang lebih baharu.\n"
         "- Pastikan setiap individu yang dinamakan masih hidup, masih aktif, dan masih relevan dengan pemimpin tersebut pada tarikh analisis.\n"
         "- Jika maklumat tidak tersedia, nyatakan sebagai **\"Spekulasi Berasaskan Pemerhatian\"** atau **\"Tiada bukti awam yang mencukupi\"** dan jangan mereka-reka fakta.\n\n"
-        "## PANDUAN PENTING UNTUK MENGELAKKAN PARALISIS ANALISIS & TERPOTONG\n"
-        "- Jika pangkalan pengetahuan sedia ada anda (sehingga 2026) menunjukkan individu tersebut memegang jawatan aktif (seperti Setiausaha Politik semasa, Pegawai Khas semasa, atau menteri kabinet yang sangat rapat) dan TIADA rekod atau laporan perpecahan/pertukaran parti/pemecatan/meninggal dunia terkini dalam hasil carian web, sahkan mereka dengan status 'Disahkan' atau 'Kemungkinan' dan Keyakinan 'Sederhana' atau 'Tinggi' berpandukan kestabilan politik semasa, berbanding melabel semuanya sebagai 'Tidak Dapat Disahkan'. Jangan biarkan sekatan keselamatan melumpuhkan keupayaan analisis anda.\n"
-        "- DILARANG SAMA SEKALI menggunakan nama pemimpin yang sedang dianalisis itu sendiri (leader) untuk mengisi jawatan 'strategist', 'gatekeeper', atau 'communicator' di dalam objek JSON 'tree'.\n"
-        "- **PENTING: Teks analisis 'full_text' mestilah padat, padu dan berimpak tinggi (Maksimum 800-1000 patah perkataan keseluruhan). Ini amat kritikal bagi mengelakkan had output terlampau dan ralat truncation JSON.** Semua baris baharu di dalam nilai string 'full_text' ditulis sebagai '\\n' (escaped newline) dan bukan baris baharu mentah (raw newlines). Semua tanda petikan berganda di dalam nilai teks mestilah ditulis sebagai '\\\"' (escaped double quotes) bagi mengelakkan kegagalan parsing JSON.\n\n"
         "Format Output MESTI dalam JSON dengan kunci berikut:\n"
         "1. 'tree': Objek mengandungi sub-key:\n"
         "   - 'leader': Nama pemimpin yang disiasat.\n"
         "   - 'strategist': Nama Strategist/Teknokrat hidup (mesti berbeza dengan leader, atau letak \"Spekulasi Berasaskan Pemerhatian\" jika tiada bukti).\n"
         "   - 'gatekeeper': Nama Political Gatekeeper hidup (mesti berbeza dengan leader, atau letak \"Spekulasi Berasaskan Pemerhatian\" jika tiada bukti).\n"
         "   - 'communicator': Nama Communications Strategist hidup (mesti berbeza dengan leader, atau letak \"Spekulasi Berasaskan Pemerhatian\" jika tiada bukti).\n"
-        "2. 'full_text': Teks analisis lengkap mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk Struktur Analisis asal di atas.\n"
+        "2. 'full_text': Teks analisis lengkap mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk Struktur Analisis asal di atas serta mematuhi LANGKAH 3A.\n"
         "3. 'sources': Array objek rujukan mengandungi 'title' dan 'url' yang sah."
     )
 
-    # Kueri Boolean terarah untuk mengumpul rujukan jawatan orang kanan pemimpin secara spesifik
-    search_query = f'"{leader_name}" (lingkaran dalaman OR "orang kanan" OR "setiausaha politik" OR "penasihat" OR "trusted core")'
-    results = dapatkan_carian_web(search_query)
+    # 1. DOUBLE-ROUND CARIAN WEB PIPELINE (Peringkat 1: Status & Pemecatan, Peringkat 2: Orang Rapat/Penasihat)
+    query_status = f'"{leader_name}" (jawatan terkini OR "dipecat" OR "keluar parti" OR "parti baharu" OR "terkini" OR "2026")'
+    results_status = dapatkan_carian_web(query_status)
+
+    query_circle = f'"{leader_name}" (lingkaran dalaman OR "orang kanan" OR "setiausaha politik" OR "penasihat" OR "trusted core")'
+    results_circle = dapatkan_carian_web(query_circle)
+
+    # Gabung dwi-carian, buang duplikasi URL untuk memperbanyakkan sumber rujukan unik (sehingga 10 tapak web)
+    combined_results = []
+    seen_urls = set()
+    for r in (results_status + results_circle):
+        url = r.get("url")
+        if url and url not in seen_urls:
+            seen_urls.add(url)
+            combined_results.append(r)
 
     user_content = f"Sila buat risikan lingkaran dalaman tokoh berikut: {leader_name}"
     
-    # Jika carian web berjaya, bersihkan dan masukkan hasil carian sebagai konteks
-    if results:
+    # Masukkan konteks carian dwi-peringkat ke dalam data pengguna
+    if combined_results:
         context_str = "\n\nMAKLUMAT CARIAN WEB TERKINI (Gunakan maklumat ini untuk analisis anda):\n"
-        for idx, r in enumerate(results):
+        for idx, r in enumerate(combined_results[:8]):  # Ambil had 8 hasil unik untuk mengelakkan ralat truncation
             snippet = r.get('content', '')
             if len(snippet) > 300:
                 snippet = snippet[:300] + "..."
@@ -270,7 +300,7 @@ def risik_tokoh():
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            max_completion_tokens=4000  # Dinaikkan ke 4000 bagi keselamatan penuh terhadap pemotongan JSON
+            max_completion_tokens=4000  # Had 4000 token output yang seimbang dengan timeout 90s
         )
 
         raw_response = response.choices[0].message.content
