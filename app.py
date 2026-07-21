@@ -31,6 +31,7 @@ def index():
 
 @app.route("/extract-ic", methods=["POST"])
 def extract_ic():
+    # Return a clean API error if OpenAI client was not initialized
     if not client:
         return jsonify({
             "error": "OpenAI API Key is not configured on the server. Please add OPENAI_API_KEY to Render environment variables."
@@ -81,7 +82,7 @@ def extract_ic():
                     ]
                 }
             ],
-            max_completion_tokens=300
+            max_completion_tokens=300  # Upgraded parameter for gpt-5.4-mini
         )
 
         raw_response = response.choices[0].message.content
@@ -95,6 +96,7 @@ def extract_ic():
 
 @app.route("/risik-tokoh", methods=["POST"])
 def risik_tokoh():
+    # Return a clean API error if OpenAI client was not initialized
     if not client:
         return jsonify({
             "error": "OpenAI API Key is not configured on the server. Please add OPENAI_API_KEY to Render environment variables."
@@ -106,6 +108,7 @@ def risik_tokoh():
     if not leader_name:
         return jsonify({"error": "Nama pemimpin tidak dibekalkan."}), 400
 
+    # Dynamically generate the current date in Malay (e.g. 21 Julai 2026)
     months_malay = [
         "Januari", "Februari", "Mac", "April", "Mei", "Jun", 
         "Julai", "Ogos", "September", "Oktober", "November", "Disember"
@@ -113,10 +116,11 @@ def risik_tokoh():
     now = datetime.datetime.now()
     current_date_str = f"{now.day} {months_malay[now.month-1]} {now.year}"
 
+    # Calculate Malay date 3 months prior (approximate)
     three_months_ago = now - datetime.timedelta(days=90)
     three_months_ago_str = f"{months_malay[three_months_ago.month-1]} {three_months_ago.year}"
 
-    # Stricter, direct, non-evasive system prompt enforcing transparent results
+    # 100% exact integration of your system prompt with strict dynamic routing and time-filtering protocol
     system_prompt = f"""# Peranan
 Anda adalah **Penganalisis Strategi Politik dan Korporat Utama** yang pakar dalam **Teori Permainan (Game Theory)**, **Pemetaan Kuasa (Network Mapping)**, **Political Intelligence**, dan **Elite Power Structure Analysis**.
 
@@ -125,7 +129,7 @@ Apabila saya memberikan nama seorang pemimpin, anda MESTI melakukan analisis **\
 
 **Sebelum menghasilkan sebarang analisis, WAJIB lakukan pengesahan menggunakan carian web terkini. Jangan bergantung kepada pengetahuan model semata-mata.**
 
-Pastikan semua maklumat adalah berdasarkan keadaan politik semasa pada tarikh analisis (Tarikh Semasa: {current_date_str}).
+Pastikan semua maklumat adalah berdasarkan keadaan politik semasa pada tarikh analisis.
 
 Sebelum menulis analisis, sahkan terlebih dahulu:
 * Parti atau organisasi yang disertai pemimpin pada masa kini.
@@ -261,9 +265,10 @@ Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
     )
 
     try:
-        # Native OpenAI Responses API Call
+        # Native OpenAI Responses API Call (Stored Prompts & Web Search)
+        # We explicitly omit 'model' and 'max_output_tokens' to rely on the stored prompt configurations
+        # and prevent validation conflicts with prompt_id
         response = client.responses.create(
-            model="gpt-5-mini",
             prompt={
                 "id": "pmpt_6a5f53144d7c81909a4371936c068ed605e1fefca4708ece",
                 "version": "1"
@@ -289,7 +294,6 @@ Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
                     "search_context_size": "high"
                 }
             ],
-            max_output_tokens=4000,
             store=True
         )
 
