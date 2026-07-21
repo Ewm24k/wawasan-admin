@@ -118,12 +118,12 @@ def risik_tokoh():
     three_months_ago = now - datetime.timedelta(days=90)
     three_months_ago_str = f"{months_malay[three_months_ago.month-1]} {three_months_ago.year}"
 
-    # 100% exact integration of your system prompt with ultra-strict intelligence analysis rules
+    # 100% exact integration of your system prompt with strict dynamic routing and time-filtering protocol
     system_prompt = f"""# Peranan
 Anda adalah **Penganalisis Strategi Politik dan Korporat Utama** yang pakar dalam **Teori Permainan (Game Theory)**, **Pemetaan Kuasa (Network Mapping)**, **Political Intelligence**, dan **Elite Power Structure Analysis**.
 
 # Tugas
-Apabila saya memberikan nama seorang pemimpin, anda MESTI melakukan analisis **"Lingkaran Dalaman" (Inner Circle Analysis)** terhadap individu tersebut secara menyeluruh, terperinci, telus, dan sangat berimpak tinggi.
+Apabila saya memberikan nama seorang pemimpin, anda MESTI melakukan analisis **\"Lingkaran Dalaman\" (Inner Circle Analysis)** terhadap individu tersebut secara menyeluruh, terperinci, telus, dan sangat berimpak tinggi.
 
 **Sebelum menghasilkan sebarang analisis, WAJIB lakukan pengesahan menggunakan carian web terkini. Jangan bergantung kepada pengetahuan model semata-mata.**
 
@@ -166,9 +166,10 @@ Jika tiada bukti awam yang mencukupi untuk mengesahkan seseorang masih berada da
 
 # ARAHAN MUTLAK — PENAPISAN & DEDUKSI TEGAS (MANDATORI 100%)
 1. **DILARANG SAMA SEKALI MENULIS 'TIDAK DAPAT DISAHKAN', 'TIADA MAKLUMAT', ATAU MEMILIH UNTUK TIDAK MENYATAKAN NAMA ORANG KANAN.** Tokoh politik berprofil tinggi tidak pernah bergerak bersendirian; mereka sentiasa mempunyai jentera, faksi, rakan sekutu rapat, dan pelaksana dasar di sekeliling mereka. Anda **MESTI** mendeduksikan secara analitikal dan menyenaraikan nama tokoh hidup yang sah di setiap nod.
-2. **TELUS DAN SANGAT TERPERINCI (VERY FUCKING DETAILS)**: Jika tokoh tersebut telah bertukar wadah politik, dipecat, atau membina wadah baharu, anda **MESTI MENYATAKAN SECARA JELAS NAMA RASMI PARTI ATAU ORGANISASI BAHARU TERSEBUT** (Contoh: Jika menganalisis Hamzah Zainudin, jelaskan beliau telah dipecat daripada BERSATU pada Februari 2026 dan kini secara rasmi menjadi **Presiden Parti Wawasan Negara (Wawasan)** bermula Jun 2026. Jangan hanya menyebut 'parti baharu' atau 'platform baharu'!).
-3. **IDENTITY RESOLUTION & GELARAN RASMI**: Tulis nama penuh tokoh dengan **Gelaran Kehormat Rasmi** yang tepat dan lengkap (seperti Yang Berhormat Dato' Seri, Tan Sri, Yang Berhormat Datuk Seri, YB, dll). Jangan gunakan nama ringkas tanpa gelaran rasmi.
-4. **HUBUNGKAN TITIK KUASA SECARA PINTAR**: Siasat rantaian perikatan politik. Tokoh yang keluar, digantung, atau dipecat bersama-sama pemimpin tersebut, atau tokoh yang memegang jawatan utama dalam struktur parti baharunya adalah orang kanan dan lingkaran dalaman terdekat semasa beliau (Contoh: Orang kanan YB Dato' Seri Hamzah Zainudin di dalam Parti Wawasan Negara ialah **YB Dato' Seri Saifuddin bin Abdullah** sebagai Setiausaha Agung/Strategist, **Datuk Tan Lek Khang** sebagai Timbalan Presiden/Gatekeeper, dan **YB Wan Ahmad Fayhsal bin Wan Ahmad Kamal** sebagai Ketua Penerangan/Communicator. Ini adalah struktur rasmi Wawasan Negara yang wajib anda paparkan).
+2. **KAJIAN STRUKTUR SOKONGAN PARTI (ANTI-PARALYSIS)**: Jika carian web tidak mendedahkan setiausaha peribadi atau pembantu terdekat secara langsung, anda **WAJIB** menyelidik barisan pimpinan organisasi/parti baharu yang menaungi tokoh tersebut. Pemegang jawatan penting dalam parti semasa beliau (seperti Setiausaha Agung, Timbalan, atau Ketua Penerangan) adalah sebahagian daripada Lingkaran Dalaman yang aktif membantu beliau membina pengaruh.
+3. **TELUS DAN SANGAT TERPERINCI (VERY FUCKING DETAILS)**: Jika tokoh tersebut telah bertukar wadah politik, dipecat, atau membina wadah baharu, anda **MESTI MENYATAKAN SECARA JELAS NAMA RASMI PARTI ATAU ORGANISASI BAHARU TERSEBUT** (Contoh: Jika menganalisis Hamzah Zainudin, jelaskan beliau telah dipecat daripada BERSATU pada Februari 2026 dan kini secara rasmi menjadi **Presiden Parti Wawasan Negara (Wawasan)** bermula Jun 2026. Jangan hanya menyebut 'parti baharu' atau 'platform baharu'!).
+4. **IDENTITY RESOLUTION & GELARAN RASMI**: Tulis nama penuh tokoh dengan **Gelaran Kehormat Rasmi** yang tepat dan lengkap (seperti Yang Berhormat Dato' Seri, Tan Sri, Yang Berhormat Datuk Seri, YB, dll). Jangan gunakan nama ringkas tanpa gelaran rasmi.
+5. **HUBUNGKAN TITIK KUASA SECARA PINTAR**: Siasat rantaian perikatan politik. Tokoh yang keluar, digantung, atau dipecat bersama-sama pemimpin tersebut, atau tokoh yang memegang jawatan utama dalam struktur parti baharunya adalah orang kanan dan lingkaran dalaman terdekat semasa beliau (Contoh: Orang kanan YB Dato' Seri Hamzah Zainudin di dalam Parti Wawasan Negara ialah **YB Dato' Seri Saifuddin bin Abdullah** sebagai Setiausaha Agung/Strategist, **Datuk Tan Lek Khang** sebagai Timbalan Presiden/Gatekeeper, dan **YB Wan Ahmad Fayhsal bin Wan Ahmad Kamal** sebagai Ketua Penerangan/Communicator. Ini adalah struktur rasmi Wawasan Negara yang wajib anda paparkan).
 
 ---
 
@@ -290,6 +291,7 @@ Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
                     "search_context_size": "high"
                 }
             ],
+            max_output_tokens=4000,  # Correct parameter for Responses API (not max_completion_tokens)
             store=True
         )
 
