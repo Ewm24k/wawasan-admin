@@ -41,6 +41,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>
         <span class="label">Statistik</span>
       </button>
+      <button class="dash__nav-item" data-panel="panelAgents" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10h-10V2z"/><path d="M12 12L2.5 12"/><circle cx="12" cy="12" r="2"/></svg>
+        <span class="label">Agen Risikan</span>
+      </button>
     </nav>
 
     <div class="dash__sidebar-foot">
@@ -166,6 +170,98 @@
             <div class="sub" id="statMonthChange">—</div>
           </div>
         </div>
+      </section>
+
+      <!-- ============ PANEL: AGEN RISIKAN (NEW) ============ -->
+      <section class="dash__panel" id="panelAgents">
+        
+        <!-- Menu cards container (Animated Fade In) -->
+        <div class="agents-menu-grid" id="agentsCardContainer">
+          <div class="risikan-card" id="cardRisikanOrangSamping">
+            <div class="risikan-card__glow"></div>
+            <div class="risikan-card__content">
+              <div class="icon-box icon-box--gold">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <h3>Risikan Orang Sampingan</h3>
+              <p>Menganalisis dan memetakan struktur lingkaran dalaman (Trusted Core) seseorang tokoh pemimpin.</p>
+              <span class="status-indicator status-indicator--active">Sedia Digunakan</span>
+            </div>
+          </div>
+
+          <div class="risikan-card risikan-card--disabled" id="cardRisikanTokoh">
+            <div class="risikan-card__glow"></div>
+            <div class="risikan-card__content">
+              <div class="icon-box icon-box--blue">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <h3>Risikan Seorang Tokoh</h3>
+              <p>Profil menyeluruh, latar belakang, rekod pencapaian, dan pengaruh politik individu terpilih.</p>
+              <span class="status-indicator">Akan Datang</span>
+            </div>
+          </div>
+
+          <div class="risikan-card risikan-card--disabled" id="cardRisikanParti">
+            <div class="risikan-card__glow"></div>
+            <div class="risikan-card__content">
+              <div class="icon-box icon-box--red">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-3-3.87"/><path d="M9 21v-2a4 4 0 0 0-3-3.87"/><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <h3>Risikan Organisasi / Parti</h3>
+              <p>Pemetaan kekuatan organisasi, kestabilan hierarki, dan analisis jentera di peringkat cawangan.</p>
+              <span class="status-indicator">Akan Datang</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Prompt Input (Triggered after selection) -->
+        <div class="agents-input-wrapper" id="agentsInputContainer" style="display:none;">
+          <div class="agents-input-card">
+            <h3>Risikan Orang Sampingan</h3>
+            <p>Masukkan nama lengkap pemimpin yang ingin dianalisis lingkaran pengaruhnya.</p>
+            <div class="prompt-box-field">
+              <input type="text" id="risikPromptInput" placeholder="Berikan 1 nama tokoh pemimpin...">
+              <button type="button" class="btn-mini primary" id="submitRisikBtn">Jalankan Risikan</button>
+            </div>
+            <button type="button" class="back-to-menu-btn" id="backToRisikMenuBtn">← Kembali ke Papan Menu</button>
+          </div>
+        </div>
+
+        <!-- Result View: 2 Columns 1 Row -->
+        <div class="risikan-result-grid" id="risikResultGrid" style="display:none;">
+          
+          <!-- Column 1: Graphic Visualization Tree -->
+          <div class="risik-col-visualization" id="risikColViz">
+            <div class="viz-header">
+              <h4>Visualisasi Peta Lingkaran Kuasa (Trusted Core)</h4>
+              <span class="ai-badge">SISTEM DIAGRAM T1ERA</span>
+            </div>
+            <div class="viz-canvas-wrapper" id="risikVizCanvas">
+              <!-- Animated SVG will be injected here -->
+            </div>
+          </div>
+
+          <!-- Column 2: Text Response Column -->
+          <div class="risik-col-text" id="risikColText">
+            <div class="text-col-header">
+              <button class="icon-action-btn" id="hideTextColBtn" title="Sembunyikan panel teks">✕ Sembunyikan</button>
+              <button class="icon-action-btn primary" id="maximizeTextColBtn" title="Paparan Penuh">🗖 Maksimum</button>
+              <button class="icon-action-btn primary" id="minimizeTextColBtn" title="Kembali ke saiz asal" style="display:none;">🗗 Minimum</button>
+            </div>
+            <div class="formatted-text-content" id="risikFormattedText">
+              <!-- AI formatted text output goes here -->
+            </div>
+          </div>
+
+          <!-- Footer: Nice looking professional sources (hidden by default) -->
+          <div class="risik-sources-footer" id="risikSourcesFooter" style="display:none;">
+            <h5>Punca Maklumat & Rujukan Disahkan</h5>
+            <div class="sources-card-grid" id="sourcesCardGrid">
+              <!-- Source cards injected here -->
+            </div>
+          </div>
+        </div>
+
       </section>
 
     </div>
@@ -448,6 +544,23 @@
         <button type="submit" class="btn-mini primary" id="submitEditMemberBtn">Simpan Kemas Kini</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ============ T1ERA AI AGENTS LOADING POPUP ============ -->
+<div class="modal-overlay" id="t1eraAgentLoader" aria-hidden="true">
+  <div class="modal-panel modal-panel--small t1era-loader-panel" role="dialog" aria-modal="true">
+    <div class="t1era-loader-body">
+      <div class="glowing-orb-wrapper">
+        <div class="orb-pulse-1"></div>
+        <div class="orb-pulse-2"></div>
+        <div class="glowing-orb">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+      </div>
+      <h3 id="t1eraLoaderStatus">T1ERA Ai Agents gets the work done...</h3>
+      <p class="sub-status">Mengumpul risikan sulit dan menstruktur rantaian rujukan</p>
+    </div>
   </div>
 </div>
 
