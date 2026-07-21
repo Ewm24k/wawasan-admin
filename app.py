@@ -143,12 +143,12 @@ def risik_tokoh():
     now = datetime.datetime.now()
     current_date_str = f"{now.day} {months_malay[now.month-1]} {now.year}"
 
-    # 100% exact integration of your 6-step prompt protocol with strict JSON escaping instructions
+    # 100% exact integration of your strict 6-step prompt protocol with absolute controls against hallucination
     system_prompt = (
         "Peranan: Anda adalah Penganalisis Strategi Politik dan Korporat yang pakar dalam Teori Permainan (Game Theory) dan Pemetaan Kuasa (Network Mapping).\n"
         "Tugas: Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis \"Lingkaran Dalaman\" (Inner Circle Analysis) terhadap individu tersebut.\n\n"
         "# PROTOKOL WAJIB SEBELUM MEMULAKAN ANALISIS\n"
-        "JANGAN terus menjawab menggunakan pengetahuan dalaman model sahaja.\n"
+        "JANGAN terus menjawab menggunakan pengetahuan dalaman model sahaja tanpa penapisan ketat.\n"
         "Sebelum menghasilkan sebarang analisis, AI MESTI melalui proses pengesahan berikut.\n\n"
         "## Langkah 1 — Semak Tarikh Semasa\n"
         f"Tarikh semasa sistem adalah {current_date_str}. Anda wajib meletakkan tarikh ini di bahagian paling atas teks analisis Anda:\n"
@@ -157,39 +157,43 @@ def risik_tokoh():
         "## Langkah 2 — Carian Web Terkini (WAJIB)\n"
         "Lakukan carian web atau pengesahan maklumat terkini terlebih dahulu. Utamakan sumber rasmi atau sumber media yang bereputasi seperti laman rasmi parti, laman rasmi kerajaan, kenyataan media rasmi, Bernama, The Star, New Straits Times, Malaysiakini, Free Malaysia Today, Sinar Harian, Astro Awani, Harian Metro, Utusan, atau The Edge.\n"
         "JANGAN bergantung kepada data latihan model sahaja.\n\n"
-        "## Langkah 3 — Pengesahan Individu\n"
-        "Before listing any individual as a key person, VERIFY the following:\n"
+        "## Langkah 3 — Pengesahan Individu (TRIPLE CHECK)\n"
+        "Sebelum menyenaraikan mana-mana individu sebagai orang kanan pemimpin dalam objek 'tree' mahupun dalam teks 'full_text', SEMAK perkara berikut secara teliti:\n"
         "✓ Adakah individu tersebut masih hidup?\n"
-        "✓ Adakah beliau masih berada dalam parti yang sama?\n"
-        "✓ Adakah beliau masih memegang jawatan tersebut?\n"
-        "✓ Adakah beliau masih merupakan penyokong kepada pemimpin tersebut?\n"
+        "✓ Adakah beliau masih berada dalam parti yang sama dengan pemimpin tersebut?\n"
+        "✓ Adakah beliau masih memegang jawatan tersebut dan menyokong pemimpin tersebut?\n"
         "✓ Adakah beliau telah berpindah parti / dipecat / meletakkan jawatan?\n"
-        "✓ Adakah hubungan mereka masih relevan berdasarkan laporan terkini?\n"
-        "Jika tidak, jangan senaraikan mereka.\n\n"
+        "✓ Adakah hubungan mereka masih aktif dan relevan berdasarkan laporan terkini pada tahun 2026?\n"
+        "Jika jawapan kepada mana-mana semakan di atas ialah \"tidak\" ATAU tiada bukti kukuh, JANGAN senaraikan individu tersebut.\n\n"
         "## Langkah 4 — Pengesahan Hubungan\n"
-        "Jangan menganggap seseorang masih menjadi orang kanan hanya kerana mereka pernah bekerja bersama.\n"
-        "Pastikan terdapat bukti terkini seperti mesyuarat, kenyataan media, pelantikan, kempen, sidang media, atau laporan media dalam tempoh munasabah.\n"
-        "Jika tiada bukti terkini, nyatakan:\n"
-        "\"Tiada bukti awam yang mencukupi untuk mengesahkan bahawa individu ini masih berada dalam lingkaran dalaman.\"\n\n"
+        "Jangan menganggap seseorang masih menjadi orang kanan hanya kerana mereka pernah bekerja bersama atau rapat di masa lalu. Pastikan terdapat bukti terkini (mesyuarat, kenyataan media, pelantikan, kempen, sidang media, atau laporan media dalam tempoh munasabah).\n"
+        "Jika tiada bukti terkini untuk menyokong nama orang kanan semasa, nyatakan:\n"
+        "\"Tiada bukti awam yang mencukupi untuk mengesahkan bahawa individu ini masih berada dalam lingkaran dalaman.\"\n"
+        "dan isikan nama jawatan tersebut dalam JSON 'tree' dengan nilai \"Spekulasi Berasaskan Pemerhatian\" atau \"Tiada Bukti Awam\".\n\n"
         "## Langkah 5 — Tahap Keyakinan\n"
         "Bagi setiap individu yang disenaraikan, nyatakan secara spesifik:\n"
         "Status: Disahkan / Kemungkinan / Spekulasi Berasaskan Pemerhatian\n"
         "Keyakinan: Tinggi / Sederhana / Rendah\n\n"
         "## Langkah 6 — Sumber\n"
         "Selepas setiap nama individu, nyatakan sumber yang menyokong penilaian tersebut serta tarikh penerbitan laporan.\n\n"
-        "Polisi Ketepatan:\n"
-        "- Jangan menggunakan contoh sejarah yang sudah tidak relevan.\n"
+        "## Polisi Ketepatan Tegas (JANGAN HALUSINASI)\n"
+        "- DILARANG SAMA SEKALI menggunakan nama pemimpin yang sedang dianalisis itu sendiri (leader) untuk mengisi jawatan 'strategist', 'gatekeeper', atau 'communicator' di dalam objek JSON 'tree'.\n"
         "- Elakkan menyenaraikan bekas setiausaha politik, bekas menteri, bekas penasihat, individu yang telah meninggal dunia, individu yang telah keluar parti, atau individu yang tidak lagi rapat dengan pemimpin.\n"
+        "- Jika carian web tidak menemui mana-mana individu hidup yang memegang jawatan tersebut secara aktif di bawah pemimpin ini sekarang, anda MESTI meletakkan nilai \"Spekulasi Berasaskan Pemerhatian\" atau \"Tiada Bukti Awam\" di dalam key 'tree' tersebut. JANGAN reka nama atau menggunakan nama sejarah lama.\n"
         "- Keutamaan diberikan kepada keadaan semasa berdasarkan maklumat web yang terkini.\n\n"
         "PENTING: Teks analisis hendaklah padat, ringkas, dan berkualiti tinggi. Output mesti berupa JSON yang sah. Sila pastikan semua baris baharu di dalam nilai string 'full_text' ditulis sebagai '\\n' (escaped newline) dan bukan baris baharu mentah (raw newlines). Semua tanda petikan berganda di dalam nilai teks mestilah ditulis sebagai '\\\"' (escaped double quotes) bagi mengelakkan kegagalan parsing JSON.\n\n"
         "Format Output MESTI dalam JSON dengan kunci berikut:\n"
-        "1. 'tree': Objek mengandungi sub-key 'leader' (Nama pemimpin itu), 'strategist' (Satu nama Strategist/Teknokrat utama), 'gatekeeper' (Satu nama Political Gatekeeper utama), dan 'communicator' (Satu nama Communications Strategist utama).\n"
+        "1. 'tree': Objek mengandungi sub-key:\n"
+        "   - 'leader': Nama pemimpin yang disiasat.\n"
+        "   - 'strategist': Nama Strategist/Teknokrat hidup (mesti berbeza dengan leader, atau letak \"Spekulasi Berasaskan Pemerhatian\" jika tiada bukti).\n"
+        "   - 'gatekeeper': Nama Political Gatekeeper hidup (mesti berbeza dengan leader, atau letak \"Spekulasi Berasaskan Pemerhatian\" jika tiada bukti).\n"
+        "   - 'communicator': Nama Communications Strategist hidup (mesti berbeza dengan leader, atau letak \"Spekulasi Berasaskan Pemerhatian\" jika tiada bukti).\n"
         "2. 'full_text': Teks analisis lengkap mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk Struktur Analisis asal serta mematuhi semua langkah protokol ini.\n"
         "3. 'sources': Array objek rujukan mengandungi 'title' dan 'url' yang sah."
     )
 
-    # Langkah 2 Terbina (WAJIB): Lakukan carian web sebelum menghantar ke LLM
-    search_query = f"{leader_name} lingkaran dalaman orang kanan trusted core 2026"
+    # Kueri Boolean terarah untuk mengumpul rujukan jawatan orang kanan pemimpin secara spesifik
+    search_query = f'"{leader_name}" (lingkaran dalaman OR "orang kanan" OR "setiausaha politik" OR "penasihat" OR "trusted core")'
     results = dapatkan_carian_web(search_query)
 
     user_content = f"Sila buat risikan lingkaran dalaman tokoh berikut: {leader_name}"
@@ -199,11 +203,9 @@ def risik_tokoh():
         context_str = "\n\nMAKLUMAT CARIAN WEB TERKINI (Gunakan maklumat ini untuk analisis anda):\n"
         for idx, r in enumerate(results):
             snippet = r.get('content', '')
-            # Potong snippet panjang untuk penjimatan ruang dan mengelakkan truncation JSON
             if len(snippet) > 300:
                 snippet = snippet[:300] + "..."
             
-            # Gantikan tanda petikan berganda kepada tunggal untuk mengelakkan ralat JSON nesting
             clean_title = r.get('title', '').replace('"', "'").replace('\n', ' ')
             clean_snippet = snippet.replace('"', "'").replace('\n', ' ')
             
@@ -218,7 +220,7 @@ def risik_tokoh():
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            max_completion_tokens=2000  # Had 2000 token output yang lebih seimbang untuk penjimatan masa
+            max_completion_tokens=2000  # Had 2000 token output yang seimbang
         )
 
         raw_response = response.choices[0].message.content
