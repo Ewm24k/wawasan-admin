@@ -79,6 +79,7 @@ var PANEL_TITLES = {
   panelMembers: "Ahli & Keahlian",
   panelPunch: "Pendaftaran Kehadiran",
   panelStats: "Statistik",
+  panelAgents: "Agen Risikan",
 };
 navItems.forEach(function (item) {
   item.addEventListener("click", function () {
@@ -91,6 +92,11 @@ navItems.forEach(function (item) {
       p.classList.toggle("is-active", p.id === targetId);
     });
     topbarTitle.textContent = PANEL_TITLES[targetId] || "";
+    
+    // Auto-reload menu state when navigation panel changes
+    if (targetId === "panelAgents") {
+      resetRisikanMenu();
+    }
   });
 });
 
@@ -1473,4 +1479,231 @@ editMemberForm.addEventListener("submit", async function (e) {
     submitEditMemberBtn.disabled = false;
     submitEditMemberBtn.textContent = "Simpan Kemas Kini";
   }
+});
+
+/* ============================================================
+   AGEN RISIKAN SUB-LOGIC (T1ERA INTEL PROCESSOR)
+   ============================================================ */
+var menuCards = document.getElementById("agentsCardContainer");
+var promptInputWrap = document.getElementById("agentsInputContainer");
+var resultGrid = document.getElementById("risikResultGrid");
+var promptInput = document.getElementById("risikPromptInput");
+var t1eraAgentLoader = document.getElementById("t1eraAgentLoader");
+var loaderStatusText = document.getElementById("t1eraLoaderStatus");
+
+// Track Glowing Card Hover Mouse Coordinates
+document.querySelectorAll(".risikan-card").forEach(function(card) {
+  card.addEventListener("mousemove", function(e) {
+    var rect = card.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var y = e.clientY - rect.top;
+    card.style.setProperty("--mouse-x", x + "px");
+    card.style.setProperty("--mouse-y", y + "px");
+  });
+});
+
+// Card Choice: Risikan Orang Sampingan Click
+document.getElementById("cardRisikanOrangSamping").addEventListener("click", function() {
+  // Fade out card layout inside 1.2 seconds
+  menuCards.classList.add("fade-out-active");
+  setTimeout(function() {
+    menuCards.style.display = "none";
+    promptInputWrap.style.display = "block";
+    promptInput.value = "";
+    promptInput.focus();
+  }, 1200);
+});
+
+// Back to menu action
+document.getElementById("backToRisikMenuBtn").addEventListener("click", resetRisikanMenu);
+
+function resetRisikanMenu() {
+  menuCards.classList.remove("fade-out-active");
+  menuCards.style.display = "grid";
+  promptInputWrap.style.display = "none";
+  resultGrid.style.display = "none";
+}
+
+// Prompt Submission & Aesthetic Cycle Loader
+document.getElementById("submitRisikBtn").addEventListener("click", handleIntelRequest);
+promptInput.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    handleIntelRequest();
+  }
+});
+
+async function handleIntelRequest() {
+  var name = promptInput.value.trim();
+  if (!name) {
+    alert("Sila masukkan nama pemimpin.");
+    return;
+  }
+
+  // Open loader popup with text-changing cycles
+  t1eraAgentLoader.classList.add("is-open");
+  t1eraAgentLoader.setAttribute("aria-hidden", "false");
+  
+  var cycle = 0;
+  loaderStatusText.textContent = "T1ERA Ai Agents gets the work done...";
+  
+  var interval = setInterval(function() {
+    cycle++;
+    if (cycle === 1) {
+      loaderStatusText.textContent = "Agents is working please wait...";
+    } else if (cycle === 2) {
+      loaderStatusText.textContent = "Data extracting...";
+    }
+  }, 2000);
+
+  try {
+    var response = await fetch(T1ERA_BACKEND_URL + "/risik-tokoh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leaderName: name }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Pengeboman sambungan gagal.");
+    }
+
+    var result = await response.json();
+    clearInterval(interval);
+    
+    loaderStatusText.textContent = "Agents T1ERA success, presenting the details info...";
+    
+    setTimeout(function() {
+      t1eraAgentLoader.classList.remove("is-open");
+      t1eraAgentLoader.setAttribute("aria-hidden", "true");
+      
+      promptInputWrap.style.display = "none";
+      renderRisikResults(result);
+    }, 1500);
+
+  } catch (err) {
+    clearInterval(interval);
+    t1eraAgentLoader.classList.remove("is-open");
+    t1eraAgentLoader.setAttribute("aria-hidden", "true");
+    alert("Kegagalan memproses risikan: " + (err.message || err));
+  }
+}
+
+// Render Results & SVG Node Graphic Tree Map
+function renderRisikResults(data) {
+  var textCol = document.getElementById("risikColText");
+  var vizCol = document.getElementById("risikColViz");
+  var footer = document.getElementById("risikSourcesFooter");
+  
+  // Display default Grid panel layout
+  resultGrid.style.display = "grid";
+  textCol.style.display = "flex";
+  textCol.style.width = "auto";
+  vizCol.style.display = "flex";
+  
+  // Format details text using aesthetic tags (headers, marks, bold, underlines)
+  var formatted = escapeHtml(data.full_text || "")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/__(.*?)__/g, "<u>$1</u>")
+    .replace(/==(.*?)==/g, "<mark class='highlight'>$1</mark>")
+    .replace(/\n\n/g, "<br><br>")
+    .replace(/\n/g, "<br>")
+    .replace(/### (.*?)(<br>|$)/g, "<h2>$1</h2>")
+    .replace(/## (.*?)(<br>|$)/g, "<h1>$1</h1>");
+  
+  document.getElementById("risikFormattedText").innerHTML = formatted;
+
+  // Injects Dynamic SVG Graphic Map into SVG Wrapper
+  var tree = data.tree || {};
+  document.getElementById("risikVizCanvas").innerHTML = generateSVGTree(
+    tree.leader || "Pemimpin Utama",
+    tree.strategist || "Tiada Data",
+    tree.gatekeeper || "Tiada Data",
+    tree.communicator || "Tiada Data"
+  );
+
+  // Sources block
+  var sources = data.sources || [];
+  var sList = document.getElementById("sourcesCardGrid");
+  if (sources.length > 0) {
+    footer.style.display = "block";
+    sList.innerHTML = sources.map(function(s) {
+      return (
+        '<a class="source-card" href="' + escapeHtml(s.url) + '" target="_blank">' +
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' +
+        '<div class="source-card__info">' +
+        '<span class="src-title">' + escapeHtml(s.title) + '</span>' +
+        '<span class="src-link">' + escapeHtml(s.url) + '</span>' +
+        '</div>' +
+        '</a>'
+      );
+    }).join("");
+  } else {
+    footer.style.display = "none";
+  }
+}
+
+function generateSVGTree(leader, strat, gate, comms) {
+  return (
+    '<svg width="100%" height="100%" viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">' +
+    '<!-- Connections / Lines with glowing dash effects -->' +
+    '<g>' +
+    '  <line x1="250" y1="200" x2="100" y2="100" stroke="#3b82f6" stroke-width="1.8" stroke-dasharray="5,5"/>' +
+    '  <line x1="250" y1="200" x2="400" y2="100" stroke="#2ecc71" stroke-width="1.8" stroke-dasharray="5,5"/>' +
+    '  <line x1="250" y1="200" x2="250" y2="320" stroke="#d3060d" stroke-width="1.8" stroke-dasharray="5,5"/>' +
+    '</g>' +
+    '<!-- Center Node: Leader -->' +
+    '<g class="node-group" style="cursor:pointer;" currentColor="#c9a227">' +
+    '  <circle cx="250" cy="200" r="32" class="node-circle" fill="#14171c" stroke="#c9a227" stroke-width="3"/>' +
+    '  <text x="250" y="246" text-anchor="middle" class="node-text-title">' + escapeHtml(leader) + '</text>' +
+    '  <text x="250" y="258" text-anchor="middle" class="node-text-subtitle">POHAK UTAMA</text>' +
+    '  <circle cx="250" cy="200" r="14" fill="#c9a227" opacity="0.1"/>' +
+    '</g>' +
+    '<!-- Top Left: Strategist/Teknokrat -->' +
+    '<g class="node-group" style="cursor:pointer;" currentColor="#3b82f6">' +
+    '  <circle cx="100" cy="100" r="24" class="node-circle" fill="#14171c" stroke="#3b82f6" stroke-width="2"/>' +
+    '  <text x="100" y="140" text-anchor="middle" class="node-text-title">' + escapeHtml(strat) + '</text>' +
+    '  <text x="100" y="152" text-anchor="middle" class="node-text-subtitle">Otak Dasar / Ekonomi</text>' +
+    '  <text x="100" y="66" text-anchor="middle" class="node-text-category">STRATEGIST</text>' +
+    '</g>' +
+    '<!-- Top Right: Communications Strategist -->' +
+    '<g class="node-group" style="cursor:pointer;" currentColor="#2ecc71">' +
+    '  <circle cx="400" cy="100" r="24" class="node-circle" fill="#14171c" stroke="#2ecc71" stroke-width="2"/>' +
+    '  <text x="400" y="140" text-anchor="middle" class="node-text-title">' + escapeHtml(comms) + '</text>' +
+    '  <text x="400" y="152" text-anchor="middle" class="node-text-subtitle">Pengawal Naratif</text>' +
+    '  <text x="400" y="66" text-anchor="middle" class="node-text-category">MEDIA CHIEF</text>' +
+    '</g>' +
+    '<!-- Bottom: Political Gatekeeper -->' +
+    '<g class="node-group" style="cursor:pointer;" currentColor="#d3060d">' +
+    '  <circle cx="250" cy="320" r="24" class="node-circle" fill="#14171c" stroke="#d3060d" stroke-width="2"/>' +
+    '  <text x="250" y="360" text-anchor="middle" class="node-text-title">' + escapeHtml(gate) + '</text>' +
+    '  <text x="250" y="372" text-anchor="middle" class="node-text-subtitle">Operasi Sokongan</text>' +
+    '  <text x="250" y="286" text-anchor="middle" class="node-text-category">GATEKEEPER</text>' +
+    '</g>' +
+    '</svg>'
+  );
+}
+
+// Double Column Screen Scaling Triggers
+var textCol = document.getElementById("risikColText");
+var vizCol = document.getElementById("risikColViz");
+var maxBtn = document.getElementById("maximizeTextColBtn");
+var minBtn = document.getElementById("minimizeTextColBtn");
+
+document.getElementById("hideTextColBtn").addEventListener("click", function() {
+  textCol.style.display = "none";
+  vizCol.style.width = "100%";
+});
+
+maxBtn.addEventListener("click", function() {
+  vizCol.style.display = "none";
+  textCol.style.width = "100%";
+  maxBtn.style.display = "none";
+  minBtn.style.display = "inline-block";
+});
+
+minBtn.addEventListener("click", function() {
+  vizCol.style.display = "flex";
+  textCol.style.width = "auto";
+  maxBtn.style.display = "inline-block";
+  minBtn.style.display = "none";
 });
