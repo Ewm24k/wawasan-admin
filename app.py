@@ -1,6 +1,8 @@
 import os
 import base64
 import sys
+import re
+import json
 import traceback
 import datetime
 from flask import Flask, request, jsonify
@@ -29,7 +31,6 @@ def index():
 
 @app.route("/extract-ic", methods=["POST"])
 def extract_ic():
-    # Return a clean API error if OpenAI client was not initialized
     if not client:
         return jsonify({
             "error": "OpenAI API Key is not configured on the server. Please add OPENAI_API_KEY to Render environment variables."
@@ -80,7 +81,7 @@ def extract_ic():
                     ]
                 }
             ],
-            max_completion_tokens=300  # Upgraded parameter for gpt-5.4-mini
+            max_completion_tokens=300
         )
 
         raw_response = response.choices[0].message.content
@@ -94,7 +95,6 @@ def extract_ic():
 
 @app.route("/risik-tokoh", methods=["POST"])
 def risik_tokoh():
-    # Return a clean API error if OpenAI client was not initialized
     if not client:
         return jsonify({
             "error": "OpenAI API Key is not configured on the server. Please add OPENAI_API_KEY to Render environment variables."
@@ -106,7 +106,6 @@ def risik_tokoh():
     if not leader_name:
         return jsonify({"error": "Nama pemimpin tidak dibekalkan."}), 400
 
-    # Dynamically generate the current date in Malay (e.g. 21 Julai 2026)
     months_malay = [
         "Januari", "Februari", "Mac", "April", "Mei", "Jun", 
         "Julai", "Ogos", "September", "Oktober", "November", "Disember"
@@ -114,11 +113,10 @@ def risik_tokoh():
     now = datetime.datetime.now()
     current_date_str = f"{now.day} {months_malay[now.month-1]} {now.year}"
 
-    # Calculate Malay date 3 months prior (approximate)
     three_months_ago = now - datetime.timedelta(days=90)
     three_months_ago_str = f"{months_malay[three_months_ago.month-1]} {three_months_ago.year}"
 
-    # 100% exact integration of your system prompt with strict dynamic routing and time-filtering protocol
+    # Stricter, direct, non-evasive system prompt enforcing transparent results
     system_prompt = f"""# Peranan
 Anda adalah **Penganalisis Strategi Politik dan Korporat Utama** yang pakar dalam **Teori Permainan (Game Theory)**, **Pemetaan Kuasa (Network Mapping)**, **Political Intelligence**, dan **Elite Power Structure Analysis**.
 
@@ -127,7 +125,7 @@ Apabila saya memberikan nama seorang pemimpin, anda MESTI melakukan analisis **\
 
 **Sebelum menghasilkan sebarang analisis, WAJIB lakukan pengesahan menggunakan carian web terkini. Jangan bergantung kepada pengetahuan model semata-mata.**
 
-Pastikan semua maklumat adalah berdasarkan keadaan politik semasa pada tarikh analisis.
+Pastikan semua maklumat adalah berdasarkan keadaan politik semasa pada tarikh analisis (Tarikh Semasa: {current_date_str}).
 
 Sebelum menulis analisis, sahkan terlebih dahulu:
 * Parti atau organisasi yang disertai pemimpin pada masa kini.
@@ -140,7 +138,7 @@ Kemudian kenal pasti **Lingkaran Dalaman SEMASA**, bukannya berdasarkan sejarah.
 Bagi setiap individu yang ingin disenaraikan sebagai orang kanan, AI WAJIB mengesahkan terlebih dahulu:
 * Masih bersama pemimpin tersebut atau tidak.
 * Masih berada dalam parti atau organisasi yang sama atau tidak.
-* Jika tidak, nyatakan parti atau organisasi baharu yang disertainya.
+* Jika tidak, nyatakan parti atau organisasi baharu yang disertainya secara rasmi.
 * Jawatan semasa individu tersebut.
 * Sama ada individu itu masih menjadi sekutu, telah menjadi lawan politik, neutral, atau hubungan semasa tidak dapat dipastikan.
 * Masih memainkan peranan penting dalam strategi, operasi, komunikasi atau pengurusan politik pemimpin tersebut.
@@ -255,7 +253,6 @@ Analisis sama ada pemimpin tersebut sedang:
 - atau membentuk gabungan baharu.
 Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
 
-    # Construct the input prompt incorporating the dynamic contextual instructions
     input_text = (
         f"Sila lakukan analisis risikan untuk tokoh pemimpin: {leader_name}.\n\n"
         f"Sistem Tarikh Semasa: {current_date_str}.\n\n"
@@ -264,8 +261,9 @@ Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
     )
 
     try:
-        # OpenAI Responses API Integration (Stored Prompts & Native Web Search with MY Geolocated context)
+        # Native OpenAI Responses API Call
         response = client.responses.create(
+            model="gpt-5-mini",
             prompt={
                 "id": "pmpt_6a5f53144d7c81909a4371936c068ed605e1fefca4708ece",
                 "version": "1"
@@ -291,13 +289,15 @@ Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
                     "search_context_size": "high"
                 }
             ],
-            max_output_tokens=4000,  # Correct parameter for Responses API (not max_completion_tokens)
+            max_output_tokens=4000,
             store=True
         )
 
-        # Defensive parser to extract JSON string from output_text content
+        # Extraction logic
         raw_response = ""
-        if hasattr(response, 'output') and hasattr(response.output, 'content'):
+        if hasattr(response, 'output_text') and response.output_text:
+            raw_response = response.output_text
+        elif hasattr(response, 'output') and hasattr(response.output, 'content'):
             for block in response.output.content:
                 if isinstance(block, dict):
                     if block.get("type") == "output_text":
@@ -314,11 +314,24 @@ Terangkan rasional strategi tersebut berdasarkan keadaan politik semasa."""
                         raw_response = getattr(block, "text")
                         break
 
-        # If raw_response was not extracted properly, raise exception
         if not raw_response:
-            raise ValueError("Gagal mengesahkan hasil risikan daripada rantaian OpenAI Responses API.")
+            raise ValueError("Gagal mengekstrak output risikan dari rantaian Responses API.")
 
-        return raw_response, 200, {"Content-Type": "application/json"}
+        # Clean JSON markdown backticks if present
+        cleaned_text = raw_response.strip()
+        if cleaned_text.startswith("```json"):
+            cleaned_text = cleaned_text[7:]
+        if cleaned_text.endswith("```"):
+            cleaned_text = cleaned_text[:-3]
+        cleaned_text = cleaned_text.strip()
+
+        # Parse and return JSON payload directly
+        match = re.search(r'\{.*\}', cleaned_text, re.DOTALL)
+        if match:
+            json_data = json.loads(match.group(0))
+            return jsonify(json_data), 200, {"Content-Type": "application/json"}
+        else:
+            raise ValueError("Sintaks JSON tidak ditemui dalam output AI.")
 
     except Exception as e:
         print("Crashes on Intel Agent Process:", file=sys.stderr)
