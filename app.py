@@ -89,7 +89,7 @@ def extract_ic():
             "- 'fullName': Extract the full name.\n"
             "- 'icNumber': Extract the 12-digit ID without dashes (e.g. 911210105837).\n"
             "- 'address': Extract the residential address, spacing lines properly with commas.\n"
-            "- 'birthplace': Identify the State of birth (e.g., SELANGOR, PERAK, KUALA LUMPUR) based on standard MyKad birth codes if available, else leave as blank string."
+            "- 'birthplace': Identify the State of birth (e.g., SELANGOR, PERAK, KUALA LUMPUR) based on MyKad birth codes if available, else leave as blank string."
         )
 
         response = client.chat.completions.create(
@@ -143,7 +143,7 @@ def risik_tokoh():
     now = datetime.datetime.now()
     current_date_str = f"{now.day} {months_malay[now.month-1]} {now.year}"
 
-    # 100% exact integration of your 6-step prompt protocol
+    # 100% exact integration of your 6-step prompt protocol with strict JSON escaping instructions
     system_prompt = (
         "Peranan: Anda adalah Penganalisis Strategi Politik dan Korporat yang pakar dalam Teori Permainan (Game Theory) dan Pemetaan Kuasa (Network Mapping).\n"
         "Tugas: Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis \"Lingkaran Dalaman\" (Inner Circle Analysis) terhadap individu tersebut.\n\n"
@@ -158,16 +158,14 @@ def risik_tokoh():
         "Lakukan carian web atau pengesahan maklumat terkini terlebih dahulu. Utamakan sumber rasmi atau sumber media yang bereputasi seperti laman rasmi parti, laman rasmi kerajaan, kenyataan media rasmi, Bernama, The Star, New Straits Times, Malaysiakini, Free Malaysia Today, Sinar Harian, Astro Awani, Harian Metro, Utusan, atau The Edge.\n"
         "JANGAN bergantung kepada data latihan model sahaja.\n\n"
         "## Langkah 3 — Pengesahan Individu\n"
-        "Sebelum menyenaraikan mana-mana individu sebagai orang kanan pemimpin, SEMAK perkara berikut:\n"
+        "Before listing any individual as a key person, VERIFY the following:\n"
         "✓ Adakah individu tersebut masih hidup?\n"
         "✓ Adakah beliau masih berada dalam parti yang sama?\n"
         "✓ Adakah beliau masih memegang jawatan tersebut?\n"
         "✓ Adakah beliau masih merupakan penyokong kepada pemimpin tersebut?\n"
-        "✓ Adakah beliau telah berpindah parti?\n"
-        "✓ Adakah beliau telah dipecat?\n"
-        "✓ Adakah beliau telah meletakkan jawatan?\n"
+        "✓ Adakah beliau telah berpindah parti / dipecat / meletakkan jawatan?\n"
         "✓ Adakah hubungan mereka masih relevan berdasarkan laporan terkini?\n"
-        "Jika jawapan kepada mana-mana semakan di atas ialah \"tidak\", jangan senaraikan individu tersebut sebagai anggota Lingkaran Dalaman semasa.\n\n"
+        "Jika tidak, jangan senaraikan mereka.\n\n"
         "## Langkah 4 — Pengesahan Hubungan\n"
         "Jangan menganggap seseorang masih menjadi orang kanan hanya kerana mereka pernah bekerja bersama.\n"
         "Pastikan terdapat bukti terkini seperti mesyuarat, kenyataan media, pelantikan, kempen, sidang media, atau laporan media dalam tempoh munasabah.\n"
@@ -182,8 +180,8 @@ def risik_tokoh():
         "Polisi Ketepatan:\n"
         "- Jangan menggunakan contoh sejarah yang sudah tidak relevan.\n"
         "- Elakkan menyenaraikan bekas setiausaha politik, bekas menteri, bekas penasihat, individu yang telah meninggal dunia, individu yang telah keluar parti, atau individu yang tidak lagi rapat dengan pemimpin.\n"
-        "- Keutamaan diberikan kepada keadaan semasa berdasarkan maklumat web yang terkini.\n"
-        "- Sekiranya terdapat percanggahan antara pengetahuan model dan maklumat web yang lebih baharu, utamakan maklumat web yang boleh disahkan.\n\n"
+        "- Keutamaan diberikan kepada keadaan semasa berdasarkan maklumat web yang terkini.\n\n"
+        "PENTING: Output mesti berupa JSON yang sah dan tidak terpotong. Sila pastikan semua baris baharu di dalam nilai string 'full_text' ditulis sebagai '\\n' (escaped newline) dan bukan baris baharu mentah (raw newlines). Semua tanda petikan berganda di dalam nilai teks mestilah ditulis sebagai '\\\"' (escaped double quotes) bagi mengelakkan kegagalan parsing JSON.\n\n"
         "Format Output MESTI dalam JSON dengan kunci berikut:\n"
         "1. 'tree': Objek mengandungi sub-key 'leader' (Nama pemimpin itu), 'strategist' (Satu nama Strategist/Teknokrat utama), 'gatekeeper' (Satu nama Political Gatekeeper utama), dan 'communicator' (Satu nama Communications Strategist utama).\n"
         "2. 'full_text': Teks analisis lengkap mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk Struktur Analisis asal serta mematuhi semua langkah protokol ini.\n"
@@ -196,11 +194,20 @@ def risik_tokoh():
 
     user_content = f"Sila buat risikan lingkaran dalaman tokoh berikut: {leader_name}"
     
-    # Jika carian web berjaya, masukkan hasil carian sebagai konteks utama
+    # Jika carian web berjaya, bersihkan dan masukkan hasil carian sebagai konteks
     if results:
         context_str = "\n\nMAKLUMAT CARIAN WEB TERKINI (Gunakan maklumat ini untuk analisis anda):\n"
         for idx, r in enumerate(results):
-            context_str += f"Sumber [{idx+1}]: {r.get('title')}\nURL: {r.get('url')}\nKandungan: {r.get('content')}\n\n"
+            snippet = r.get('content', '')
+            # Potong snippet panjang untuk penjimatan ruang dan mengelakkan truncation JSON
+            if len(snippet) > 300:
+                snippet = snippet[:300] + "..."
+            
+            # Gantikan tanda petikan berganda kepada tunggal untuk mengelakkan ralat JSON nesting
+            clean_title = r.get('title', '').replace('"', "'").replace('\n', ' ')
+            clean_snippet = snippet.replace('"', "'").replace('\n', ' ')
+            
+            context_str += f"Sumber [{idx+1}]: {clean_title}\nURL: {r.get('url')}\nKandungan: {clean_snippet}\n\n"
         user_content += context_str
 
     try:
@@ -211,7 +218,7 @@ def risik_tokoh():
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            max_completion_tokens=1800  # Upgraded parameter for gpt-5.4-mini
+            max_completion_tokens=4000  # Dinaikkan ke 4000 untuk mengelakkan ralat truncation JSON
         )
 
         raw_response = response.choices[0].message.content
