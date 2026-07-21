@@ -2,6 +2,7 @@ import os
 import base64
 import sys
 import traceback
+import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
@@ -58,7 +59,7 @@ def extract_ic():
             "- 'fullName': Extract the full name.\n"
             "- 'icNumber': Extract the 12-digit ID without dashes (e.g. 911210105837).\n"
             "- 'address': Extract the residential address, spacing lines properly with commas.\n"
-            "- 'birthplace': Identify the State of birth (e.g., SELANGOR, PERAK, KUALA LUMPUR) based on MyKad birth codes if available, else leave as blank string."
+            "- 'birthplace': Identify the State of birth (e.g., SELANGOR, PERAK, KUALA LUMPUR) based on standard MyKad birth codes if available, else leave as blank string."
         )
 
         response = client.chat.completions.create(
@@ -104,25 +105,58 @@ def risik_tokoh():
     if not leader_name:
         return jsonify({"error": "Nama pemimpin tidak dibekalkan."}), 400
 
-    # 100% exact insertion of system prompt as specified in promptv1.md
+    # Dynamically generate the current date in Malay
+    months_malay = [
+        "Januari", "Februari", "Mac", "April", "Mei", "Jun", 
+        "Julai", "Ogos", "September", "Oktober", "November", "Disember"
+    ]
+    now = datetime.datetime.now()
+    current_date_str = f"{now.day} {months_malay[now.month-1]} {now.year}"
+
+    # 100% exact integration of your 6-step prompt protocol
     system_prompt = (
         "Peranan: Anda adalah Penganalisis Strategi Politik dan Korporat yang pakar dalam Teori Permainan (Game Theory) dan Pemetaan Kuasa (Network Mapping).\n"
-        "Tugas: Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis \"Lingkaran Dalaman\" (Inner Circle Analysis) terhadap individu tersebut.\n"
-        "Struktur Analisis:\n"
-        "Profil Ringkas: Nyatakan peranan semasa dan \"Game Plan\" utama mereka dalam landskap politik/organisasi sekarang.\n"
-        "Pemetaan Orang Kuat (The Trusted Core): Pecahkan kepada 3 kategori wajib:\n"
-        "Strategist/Teknokrat: Siapa otak di sebalik dasar/ekonomi mereka?\n"
-        "Political Gatekeeper: Siapa yang menguruskan sokongan, 'dirty work', atau operasi lapangan?\n"
-        "Communications Strategist: Siapa yang mengawal naratif dan imej mereka di media?\n"
-        "Dinamika Kepercayaan: Terangkan mengapa mereka percaya kepada individu-individu ini (Adakah berdasarkan sejarah, kompetensi, atau kepentingan transaksional?).\n"
-        "Game Theory Assessment: Adakah mereka sedang membina empayar, bertahan, atau cuba mengimbangi kuasa?\n\n"
-        "Syarat:\n"
-        "- Gunakan gaya bahasa yang profesional, analitikal, dan objektif.\n"
-        "- Jika maklumat tidak tersedia, nyatakan ia sebagai \"Spekulasi Berasaskan Pemerhatian\" dan jangan mereka-reka fakta.\n"
-        "- Fokus kepada mekanik kuasa, bukan sentimen peribadi.\n\n"
+        "Tugas: Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis \"Lingkaran Dalaman\" (Inner Circle Analysis) terhadap individu tersebut.\n\n"
+        "# PROTOKOL WAJIB SEBELUM MEMULAKAN ANALISIS\n"
+        "JANGAN terus menjawab menggunakan pengetahuan dalaman model sahaja.\n"
+        "Sebelum menghasilkan sebarang analisis, AI MESTI melalui proses pengesahan berikut.\n\n"
+        "## Langkah 1 — Semak Tarikh Semasa\n"
+        f"Tarikh semasa sistem adalah {current_date_str}. Anda wajib meletakkan tarikh ini di bahagian paling atas teks analisis Anda:\n"
+        f"**Tarikh Analisis:** {current_date_str}\n"
+        "Semua analisis hendaklah berpandukan keadaan politik pada tarikh tersebut.\n\n"
+        "## Langkah 2 — Carian Web Terkini (WAJIB)\n"
+        "Lakukan carian web atau pengesahan maklumat terkini terlebih dahulu. Utamakan sumber rasmi atau sumber media yang bereputasi seperti laman rasmi parti, laman rasmi kerajaan, kenyataan media rasmi, Bernama, The Star, New Straits Times, Malaysiakini, Free Malaysia Today, Sinar Harian, Astro Awani, Harian Metro, Utusan, atau The Edge.\n"
+        "JANGAN bergantung kepada data latihan model sahaja.\n\n"
+        "## Langkah 3 — Pengesahan Individu\n"
+        "Sebelum menyenaraikan mana-mana individu sebagai orang kanan pemimpin, SEMAK perkara berikut:\n"
+        "✓ Adakah individu tersebut masih hidup?\n"
+        "✓ Adakah beliau masih berada dalam parti yang sama?\n"
+        "✓ Adakah beliau masih memegang jawatan tersebut?\n"
+        "✓ Adakah beliau masih merupakan penyokong kepada pemimpin tersebut?\n"
+        "✓ Adakah beliau telah berpindah parti?\n"
+        "✓ Adakah beliau telah dipecat?\n"
+        "✓ Adakah beliau telah meletakkan jawatan?\n"
+        "✓ Adakah hubungan mereka masih relevan berdasarkan laporan terkini?\n"
+        "Jika jawapan kepada mana-mana semakan di atas ialah \"tidak\", jangan senaraikan individu tersebut sebagai anggota Lingkaran Dalaman semasa.\n\n"
+        "## Langkah 4 — Pengesahan Hubungan\n"
+        "Jangan menganggap seseorang masih menjadi orang kanan hanya kerana mereka pernah bekerja bersama.\n"
+        "Pastikan terdapat bukti terkini seperti mesyuarat, kenyataan media, pelantikan, kempen, sidang media, atau laporan media dalam tempoh munasabah.\n"
+        "Jika tiada bukti terkini, nyatakan:\n"
+        "\"Tiada bukti awam yang mencukupi untuk mengesahkan bahawa individu ini masih berada dalam lingkaran dalaman.\"\n\n"
+        "## Langkah 5 — Tahap Keyakinan\n"
+        "Bagi setiap individu yang disenaraikan, nyatakan secara spesifik:\n"
+        "Status: Disahkan / Kemungkinan / Spekulasi Berasaskan Pemerhatian\n"
+        "Keyakinan: Tinggi / Sederhana / Rendah\n\n"
+        "## Langkah 6 — Sumber\n"
+        "Selepas setiap nama individu, nyatakan sumber yang menyokong penilaian tersebut serta tarikh penerbitan laporan.\n\n"
+        "Polisi Ketepatan:\n"
+        "- Jangan menggunakan contoh sejarah yang sudah tidak relevan.\n"
+        "- Elakkan menyenaraikan bekas setiausaha politik, bekas menteri, bekas penasihat, individu yang telah meninggal dunia, individu yang telah keluar parti, atau individu yang tidak lagi rapat dengan pemimpin.\n"
+        "- Keutamaan diberikan kepada keadaan semasa berdasarkan maklumat web yang terkini.\n"
+        "- Sekiranya terdapat percanggahan antara pengetahuan model dan maklumat web yang lebih baharu, utamakan maklumat web yang boleh disahkan.\n\n"
         "Format Output MESTI dalam JSON dengan kunci berikut:\n"
         "1. 'tree': Objek mengandungi sub-key 'leader' (Nama pemimpin itu), 'strategist' (Satu nama Strategist/Teknokrat utama), 'gatekeeper' (Satu nama Political Gatekeeper utama), dan 'communicator' (Satu nama Communications Strategist utama).\n"
-        "2. 'full_text': Teks analisis lengkap yang diformat dengan baik mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk utama di atas.\n"
+        "2. 'full_text': Teks analisis lengkap mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk Struktur Analisis asal serta mematuhi semua langkah protokol ini.\n"
         "3. 'sources': Array objek rujukan mengandungi 'title' dan 'url' yang sah."
     )
 
