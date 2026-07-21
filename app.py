@@ -181,7 +181,7 @@ def risik_tokoh():
         "- Jangan menggunakan contoh sejarah yang sudah tidak relevan.\n"
         "- Elakkan menyenaraikan bekas setiausaha politik, bekas menteri, bekas penasihat, individu yang telah meninggal dunia, individu yang telah keluar parti, atau individu yang tidak lagi rapat dengan pemimpin.\n"
         "- Keutamaan diberikan kepada keadaan semasa berdasarkan maklumat web yang terkini.\n\n"
-        "PENTING: Output mesti berupa JSON yang sah dan tidak terpotong. Sila pastikan semua baris baharu di dalam nilai string 'full_text' ditulis sebagai '\\n' (escaped newline) dan bukan baris baharu mentah (raw newlines). Semua tanda petikan berganda di dalam nilai teks mestilah ditulis sebagai '\\\"' (escaped double quotes) bagi mengelakkan kegagalan parsing JSON.\n\n"
+        "PENTING: Teks analisis hendaklah padat, ringkas, dan berkualiti tinggi. Output mesti berupa JSON yang sah. Sila pastikan semua baris baharu di dalam nilai string 'full_text' ditulis sebagai '\\n' (escaped newline) dan bukan baris baharu mentah (raw newlines). Semua tanda petikan berganda di dalam nilai teks mestilah ditulis sebagai '\\\"' (escaped double quotes) bagi mengelakkan kegagalan parsing JSON.\n\n"
         "Format Output MESTI dalam JSON dengan kunci berikut:\n"
         "1. 'tree': Objek mengandungi sub-key 'leader' (Nama pemimpin itu), 'strategist' (Satu nama Strategist/Teknokrat utama), 'gatekeeper' (Satu nama Political Gatekeeper utama), dan 'communicator' (Satu nama Communications Strategist utama).\n"
         "2. 'full_text': Teks analisis lengkap mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk Struktur Analisis asal serta mematuhi semua langkah protokol ini.\n"
@@ -218,7 +218,7 @@ def risik_tokoh():
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            max_completion_tokens=4000  # Dinaikkan ke 4000 untuk mengelakkan ralat truncation JSON
+            max_completion_tokens=2000  # Had 2000 token output yang lebih seimbang untuk penjimatan masa
         )
 
         raw_response = response.choices[0].message.content
