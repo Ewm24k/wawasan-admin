@@ -1,6 +1,7 @@
 import os
 import base64
-import os.path
+import sys
+import traceback
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
@@ -14,7 +15,7 @@ if api_key:
     client = OpenAI(api_key=api_key)
 else:
     client = None
-    print("WARNING: OPENAI_API_KEY is not set in the environment variables.")
+    print("WARNING: OPENAI_API_KEY is not set in the environment variables.", file=sys.stderr)
 
 @app.route("/", methods=["GET"])
 def index():
@@ -84,8 +85,9 @@ def extract_ic():
         return raw_response, 200, {"Content-Type": "application/json"}
 
     except Exception as e:
-        print("Backend Error: ", str(e))
-        return jsonify({"error": "Internal processor error: " + str(e)}), 500
+        print("Crashes on MyKad Extract Process:", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        return jsonify({"error": f"Internal processor error: {str(e)}"}), 500
 
 
 @app.route("/risik-tokoh", methods=["POST"])
@@ -96,22 +98,22 @@ def risik_tokoh():
             "error": "OpenAI API Key is not configured on the server. Please add OPENAI_API_KEY to Render environment variables."
         }), 500
 
-    request_data = request.get_json() or {}
+    request_data = request.get_json(silent=True) or {}
     leader_name = request_data.get("leaderName", "").strip()
 
     if not leader_name:
         return jsonify({"error": "Nama pemimpin tidak dibekalkan."}), 400
 
-    # 100% exact insertion of system prompt as specified in the promptv1.md layout
+    # 100% exact insertion of system prompt as specified in promptv1.md
     system_prompt = (
         "Peranan: Anda adalah Penganalisis Strategi Politik dan Korporat yang pakar dalam Teori Permainan (Game Theory) dan Pemetaan Kuasa (Network Mapping).\n"
         "Tugas: Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis \"Lingkaran Dalaman\" (Inner Circle Analysis) terhadap individu tersebut.\n"
         "Struktur Analisis:\n"
         "Profil Ringkas: Nyatakan peranan semasa dan \"Game Plan\" utama mereka dalam landskap politik/organisasi sekarang.\n"
         "Pemetaan Orang Kuat (The Trusted Core): Pecahkan kepada 3 kategori wajib:\n"
-        "- Strategist/Teknokrat: Siapa otak di sebalik dasar/ekonomi mereka?\n"
-        "- Political Gatekeeper: Siapa yang menguruskan sokongan, 'dirty work', atau operasi lapangan?\n"
-        "- Communications Strategist: Siapa yang mengawal naratif dan imej mereka di media?\n"
+        "Strategist/Teknokrat: Siapa otak di sebalik dasar/ekonomi mereka?\n"
+        "Political Gatekeeper: Siapa yang menguruskan sokongan, 'dirty work', atau operasi lapangan?\n"
+        "Communications Strategist: Siapa yang mengawal naratif dan imej mereka di media?\n"
         "Dinamika Kepercayaan: Terangkan mengapa mereka percaya kepada individu-individu ini (Adakah berdasarkan sejarah, kompetensi, atau kepentingan transaksional?).\n"
         "Game Theory Assessment: Adakah mereka sedang membina empayar, bertahan, atau cuba mengimbangi kuasa?\n\n"
         "Syarat:\n"
@@ -139,7 +141,8 @@ def risik_tokoh():
         return raw_response, 200, {"Content-Type": "application/json"}
 
     except Exception as e:
-        print("Risik API Error:", str(e))
+        print("Crashes on Intel Agent Process:", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         return jsonify({"error": f"Gagal memproses analisis AI: {str(e)}"}), 500
 
 
