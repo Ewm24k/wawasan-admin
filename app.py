@@ -1,5 +1,6 @@
 import os
 import base64
+import os.path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
@@ -19,7 +20,7 @@ else:
 def index():
     return jsonify({
         "status": "running", 
-        "service": "Wawasan Sabak MyKad Vision Processor",
+        "service": "Wawasan Sabak MyKad Vision Processor and Intel Agent",
         "api_configured": client is not None
     })
 
@@ -85,6 +86,62 @@ def extract_ic():
     except Exception as e:
         print("Backend Error: ", str(e))
         return jsonify({"error": "Internal processor error: " + str(e)}), 500
+
+
+@app.route("/risik-tokoh", methods=["POST"])
+def risik_tokoh():
+    # Return a clean API error if OpenAI client was not initialized
+    if not client:
+        return jsonify({
+            "error": "OpenAI API Key is not configured on the server. Please add OPENAI_API_KEY to Render environment variables."
+        }), 500
+
+    request_data = request.get_json() or {}
+    leader_name = request_data.get("leaderName", "").strip()
+
+    if not leader_name:
+        return jsonify({"error": "Nama pemimpin tidak dibekalkan."}), 400
+
+    # 100% exact insertion of system prompt as specified in the promptv1.md layout
+    system_prompt = (
+        "Peranan: Anda adalah Penganalisis Strategi Politik dan Korporat yang pakar dalam Teori Permainan (Game Theory) dan Pemetaan Kuasa (Network Mapping).\n"
+        "Tugas: Apabila saya memberikan nama seorang pemimpin, anda perlu melakukan analisis \"Lingkaran Dalaman\" (Inner Circle Analysis) terhadap individu tersebut.\n"
+        "Struktur Analisis:\n"
+        "Profil Ringkas: Nyatakan peranan semasa dan \"Game Plan\" utama mereka dalam landskap politik/organisasi sekarang.\n"
+        "Pemetaan Orang Kuat (The Trusted Core): Pecahkan kepada 3 kategori wajib:\n"
+        "- Strategist/Teknokrat: Siapa otak di sebalik dasar/ekonomi mereka?\n"
+        "- Political Gatekeeper: Siapa yang menguruskan sokongan, 'dirty work', atau operasi lapangan?\n"
+        "- Communications Strategist: Siapa yang mengawal naratif dan imej mereka di media?\n"
+        "Dinamika Kepercayaan: Terangkan mengapa mereka percaya kepada individu-individu ini (Adakah berdasarkan sejarah, kompetensi, atau kepentingan transaksional?).\n"
+        "Game Theory Assessment: Adakah mereka sedang membina empayar, bertahan, atau cuba mengimbangi kuasa?\n\n"
+        "Syarat:\n"
+        "- Gunakan gaya bahasa yang profesional, analitikal, dan objektif.\n"
+        "- Jika maklumat tidak tersedia, nyatakan ia sebagai \"Spekulasi Berasaskan Pemerhatian\" dan jangan mereka-reka fakta.\n"
+        "- Fokus kepada mekanik kuasa, bukan sentimen peribadi.\n\n"
+        "Format Output MESTI dalam JSON dengan kunci berikut:\n"
+        "1. 'tree': Objek mengandungi sub-key 'leader' (Nama pemimpin itu), 'strategist' (Satu nama Strategist/Teknokrat utama), 'gatekeeper' (Satu nama Political Gatekeeper utama), dan 'communicator' (Satu nama Communications Strategist utama).\n"
+        "2. 'full_text': Teks analisis lengkap yang diformat dengan baik mengikut format bertanda Markdown/Aesthetic (Gunakan **teks** untuk tebal, __teks__ untuk garis bawah, ==teks== untuk sorotan warna/highlight). Teks ini mesti merangkumi tajuk-tajuk utama di atas.\n"
+        "3. 'sources': Array objek rujukan mengandungi 'title' dan 'url' yang sah."
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-5.4-mini",
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Sila buat risikan lingkaran dalaman tokoh berikut: {leader_name}"}
+            ],
+            max_tokens=1800
+        )
+
+        raw_response = response.choices[0].message.content
+        return raw_response, 200, {"Content-Type": "application/json"}
+
+    except Exception as e:
+        print("Risik API Error:", str(e))
+        return jsonify({"error": f"Gagal memproses analisis AI: {str(e)}"}), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
